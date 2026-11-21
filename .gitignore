@@ -1,0 +1,4 @@
+# Sicherungs-Zip (liegt jetzt in Git)
+ballettschule-sicherung.zip
+__pycache__/
+.DS_Store

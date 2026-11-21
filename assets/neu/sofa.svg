@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" width="900" height="560">
+  <!-- Sofa, nach der Kinderzeichnung neu gezeichnet. Weicher Buntstift-Look. -->
+  <defs>
+    <!-- leicht wackelige Linien wie von Hand -->
+    <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
+    </filter>
+    <!-- Buntstift-Körnung -->
+    <filter id="crayon" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9 0.08" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.5 0.55" result="grain"/>
+      <feComposite in="grain" in2="SourceGraphic" operator="in" result="g2"/>
+      <feBlend in="SourceGraphic" in2="g2" mode="screen"/>
+    </filter>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6a5c"/><stop offset="1" stop-color="#e2392f"/>
+    </linearGradient>
+    <linearGradient id="seat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff7a6b"/><stop offset="1" stop-color="#ec4a3c"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8402f"/><stop offset="1" stop-color="#c22b22"/>
+    </linearGradient>
+    <linearGradient id="leg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c96a2c"/><stop offset="1" stop-color="#8a4316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Schatten am Boden -->
+  <ellipse cx="450" cy="522" rx="380" ry="18" fill="#000" opacity=".12"/>
+
+  <g filter="url(#wobble)" stroke="#6b4a44" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Beine -->
+    <rect x="118" y="452" width="38" height="66" rx="16" fill="url(#leg)"/>
+    <rect x="744" y="452" width="38" height="66" rx="16" fill="url(#leg)"/>
+
+    <g filter="url(#crayon)">
+      <!-- Rückenkissen -->
+      <path d="M190 330 C182 170 210 92 320 82 C400 76 440 104 448 170 L452 330 Z" fill="url(#back)"/>
+      <path d="M452 330 L456 170 C464 104 502 76 582 82 C692 92 720 170 712 330 Z" fill="url(#back)"/>
+
+      <!-- Armlehnen (hinten) -->
+      <path d="M150 236 C150 210 168 200 190 204 L222 210 L222 300 L150 300 Z" fill="#d93a2e"/>
+      <path d="M750 236 C750 210 732 200 710 204 L678 210 L678 300 L750 300 Z" fill="#d93a2e"/>
+      <!-- Unterteil / Sockel -->
+      <path d="M118 360 L782 360 L790 452 C790 470 776 476 760 476 L140 476 C124 476 110 470 110 452 Z" fill="url(#base)"/>
+
+      <!-- Sitzkissen -->
+      <path d="M196 312 C196 300 206 294 220 294 L436 296 C448 296 452 306 452 318 L452 384 C452 396 444 402 432 402 L214 402 C200 402 194 394 194 382 Z" fill="url(#seat)"/>
+      <path d="M452 318 C452 306 456 296 468 296 L684 294 C698 294 708 300 708 312 L710 382 C710 394 704 402 690 402 L472 402 C460 402 452 396 452 384 Z" fill="url(#seat)"/>
+
+      <!-- Armlehnen (vorne) -->
+      <path d="M96 300 C92 268 112 252 142 252 L176 254 C202 256 214 274 214 300 L214 452 C214 466 204 474 190 474 L118 474 C104 474 96 466 96 452 Z" fill="url(#back)"/>
+      <path d="M804 300 C808 268 788 252 758 252 L724 254 C698 256 686 274 686 300 L686 452 C686 466 696 474 710 474 L782 474 C796 474 804 466 804 452 Z" fill="url(#back)"/>
+    </g>
+
+    <!-- Falten wie in der Originalzeichnung -->
+    <g fill="none" stroke-width="4">
+      <path d="M262 362 C292 344 330 344 352 360"/>
+      <path d="M300 348 C312 340 324 338 336 340"/>
+      <path d="M552 358 C578 346 610 348 640 364"/>
+      <path d="M596 344 C612 336 628 336 642 340"/>
+    </g>
+  </g>
+
+  <!-- Lichtkanten (ohne Kontur) -->
+  <g fill="#fff" opacity=".35">
+    <path d="M232 120 C262 98 300 92 340 96 C300 106 262 118 240 140 Z"/>
+    <path d="M494 120 C524 98 562 92 602 96 C562 106 524 118 502 140 Z"/>
+    <rect x="216" y="302" width="210" height="10" rx="5"/>
+    <rect x="474" y="302" width="210" height="10" rx="5"/>
+    <rect x="112" y="266" width="70" height="9" rx="4.5"/>
+    <rect x="718" y="266" width="70" height="9" rx="4.5"/>
+  </g>
+</svg>

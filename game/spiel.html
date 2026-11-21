@@ -1,0 +1,1161 @@
+<title>École de Ballet Étoile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Ein-Bildschirm-Spiel: Szene als SVG füllt den Bildschirm, HTML-Oberfläche liegt darüber.
+   Bewusst nur ein (helles) Farbschema: Bilderbuch-Look wie in einer Pariser Ballettschule. */
+:root {
+  --rose: #c2456e;      /* Hauptakzent: Ballett-Rosa, kräftig */
+  --rose-soft: #fbe3ef;
+  --plum: #5b3d4a;      /* Linien und Text */
+  --cream: #fff8f0;     /* Flächen der Oberfläche */
+  --gold: #f6c64b;      /* Lob-Sterne */
+  --night: #2b2236;     /* Letterbox / Hintergrund */
+  --ui-font: 'Nunito', 'Trebuchet MS', system-ui, sans-serif;
+  --title-font: 'Fredoka', 'Nunito', system-ui, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--night); color: var(--plum); font-family: var(--ui-font); overflow: hidden;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+#game { position: fixed; inset: 0; }
+#stage { width: 100%; height: 100%; display: block; }
+#stage text { font-family: var(--ui-font); }
+#fade { position: fixed; inset: 0; background: #1a1220; opacity: 0; pointer-events: none; transition: opacity .28s; z-index: 30; }
+#fade.on { opacity: 1; }
+
+/* HUD */
+.hud { position: fixed; z-index: 10; display: flex; gap: 10px; align-items: center; }
+.hud-top-l { top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); }
+.hud-top-r { top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); }
+.hud-bot-l { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); max-width: min(560px, 70vw); }
+.pill { background: var(--cream); border: 3px solid var(--plum); border-radius: 999px; padding: 8px 16px;
+  font-weight: 800; font-size: 17px; box-shadow: 0 3px 0 rgba(43,34,54,.35); }
+.pill.place { font-family: var(--title-font); font-weight: 600; font-size: 19px; color: var(--rose); }
+.pill.stars { display: flex; align-items: center; gap: 6px; }
+.pill.stars svg { width: 22px; height: 22px; }
+.task { background: var(--cream); border: 3px solid var(--plum); border-radius: 18px; padding: 9px 14px; font-size: 15.5px;
+  font-weight: 700; box-shadow: 0 3px 0 rgba(43,34,54,.35); line-height: 1.3; }
+.task b { color: var(--rose); }
+.round { width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--plum); background: var(--cream);
+  display: grid; place-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 3px 0 rgba(43,34,54,.35); color: var(--plum); }
+.round:active, .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(43,34,54,.35); }
+button { font-family: var(--ui-font); }
+button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
+
+.btn { border: 3px solid var(--plum); background: var(--cream); color: var(--plum); border-radius: 18px; padding: 12px 20px;
+  font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 rgba(43,34,54,.35); text-align: left; }
+.btn.primary { background: var(--rose); color: #fff; border-color: #7e2547; }
+.btn.big { font-size: 22px; padding: 16px 30px; text-align: center; }
+
+#movein { position: fixed; z-index: 11; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); font-size: 21px; padding: 14px 24px; }
+
+/* Dialog */
+#dialog { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  width: min(940px, calc(100vw - 28px)); background: var(--cream); border: 4px solid var(--plum); border-radius: 26px;
+  box-shadow: 0 6px 0 rgba(43,34,54,.4); display: grid; grid-template-columns: 112px 1fr; gap: 6px 16px; padding: 14px 18px 16px 12px; }
+#dialog .face { width: 112px; height: 112px; border-radius: 50%; background: var(--rose-soft); border: 3px solid var(--plum); overflow: hidden; grid-row: span 2; align-self: start; }
+#dialog .face svg { width: 100%; height: 100%; }
+#dialog .who { font-family: var(--title-font); font-weight: 700; font-size: 22px; color: var(--rose); display: flex; align-items: center; gap: 10px; }
+#dialog .say { font-size: 20px; font-weight: 700; line-height: 1.35; min-height: 54px; }
+#dialog .choices { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+#dialog .speak { width: 38px; height: 38px; font-size: 17px; }
+
+/* Panels (Treppe, Bestätigung, Schwarzes Brett) */
+.modal-bg { position: fixed; inset: 0; z-index: 25; background: rgba(26,18,32,.45); display: grid; place-items: center; padding: 16px; }
+.panel { background: var(--cream); border: 4px solid var(--plum); border-radius: 28px; padding: 22px 24px; box-shadow: 0 8px 0 rgba(43,34,54,.4);
+  width: min(560px, 100%); display: flex; flex-direction: column; gap: 12px; max-height: 92vh; overflow: auto; }
+.panel h2 { margin: 0; font-family: var(--title-font); font-weight: 700; color: var(--rose); font-size: 28px; text-align: center; text-wrap: balance; }
+.panel p { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.4; text-align: center; }
+.panel .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.floorbtn { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.floorbtn small { font-weight: 700; opacity: .7; font-size: 14px; }
+.floorbtn.here { background: var(--rose-soft); }
+
+/* Toast */
+#toast { position: fixed; z-index: 26; top: calc(112px + env(safe-area-inset-top, 0px)); left: 50%; transform: translate(-50%, -20px); opacity: 0;
+  background: var(--plum); color: #fff; border-radius: 999px; padding: 12px 22px; font-weight: 800; font-size: 18px; transition: .3s; pointer-events: none; text-align: center; max-width: 90vw; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* Start / Avatar */
+#start { position: fixed; inset: 0; z-index: 40; overflow: auto; background:
+  radial-gradient(circle at 80% 10%, #fff3 0 8%, transparent 9%), linear-gradient(#9fc9ea, #f6d6e4 70%, #f4c9da); display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.start-card { background: var(--cream); border: 4px solid var(--plum); border-radius: 32px; padding: 26px 28px; box-shadow: 0 8px 0 rgba(43,34,54,.4);
+  width: min(980px, 100%); display: grid; gap: 16px; }
+.start-card h1 { margin: 0; font-family: var(--title-font); font-size: clamp(34px, 5vw, 54px); color: var(--rose); text-align: center; line-height: 1.05; }
+.start-card .sub { text-align: center; font-weight: 800; font-size: 18px; margin-top: -6px; }
+.editor { display: grid; grid-template-columns: 260px 1fr; gap: 20px; align-items: start; }
+.preview { background: linear-gradient(#e9f3fb, #fdf0d8 75%, #e2b98c 75%); border: 3px solid var(--plum); border-radius: 24px; height: 340px; }
+.preview svg { width: 100%; height: 100%; }
+.opts { display: grid; gap: 12px; }
+.opt-row { display: grid; gap: 6px; }
+.opt-row label, .opt-row .lbl { font-weight: 800; font-size: 15px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw { width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--plum); cursor: pointer; box-shadow: 0 3px 0 rgba(43,34,54,.3); }
+.sw[aria-pressed="true"] { outline: 4px solid var(--rose); outline-offset: 2px; }
+.chip { border: 3px solid var(--plum); background: #fff; border-radius: 999px; padding: 8px 16px; font-weight: 800; font-size: 16px; cursor: pointer; color: var(--plum); }
+.chip[aria-pressed="true"] { background: var(--rose); color: #fff; border-color: #7e2547; }
+#pname { font: 800 20px var(--ui-font); border: 3px solid var(--plum); border-radius: 14px; padding: 10px 14px; width: min(320px, 100%); color: var(--plum); background: #fff; }
+.start-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+@media (max-width: 720px) { .editor { grid-template-columns: 1fr; } .preview { height: 260px; } }
+
+#rotate { position: fixed; inset: 0; z-index: 60; background: var(--night); color: #fff; display: none; place-items: center; text-align: center;
+  font: 800 22px var(--ui-font); padding: 24px; }
+@media (orientation: portrait) and (max-width: 900px) { #rotate { display: grid; } }
+@keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.twinkle { animation: twinkle 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { #fade, #toast { transition: none; } .twinkle { animation: none; } }
+</style>
+
+<div id="game">
+  <svg id="stage" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+    <defs id="defs"></defs>
+    <g id="cam"><g id="scene"></g><g id="actors"></g></g>
+  </svg>
+</div>
+
+<div class="hud hud-top-l"><div class="pill place" id="place">Entrée</div></div>
+<div class="hud hud-top-r">
+  <div class="pill stars" title="Lob-Punkte"><svg viewBox="-12 -12 24 24"><path d="M0 -11 l3.2 6.6 7.3 1 -5.3 5.1 1.3 7.3 -6.5 -3.5 -6.5 3.5 1.3 -7.3 -5.3 -5.1 7.3 -1 z" fill="#f6c64b" stroke="#5b3d4a" stroke-width="1.6"/></svg><span id="stars">0</span></div>
+  <button class="round" id="soundBtn" aria-label="Vorlesen an oder aus">🔊</button>
+  <button class="round" id="menuBtn" aria-label="Menü">☰</button>
+</div>
+<div class="hud hud-bot-l"><div class="task" id="task"></div></div>
+<button class="btn primary" id="movein" hidden>Hier einziehen ♥</button>
+
+<div id="dialog" hidden>
+  <div class="face" id="dlgFace"></div>
+  <div class="who"><span id="dlgName"></span><button class="round speak" id="dlgSpeak" aria-label="Vorlesen">🔈</button></div>
+  <div class="say" id="dlgText"></div>
+  <div class="choices" id="dlgChoices"></div>
+</div>
+<div id="modal" class="modal-bg" hidden><div class="panel" id="modalPanel"></div></div>
+<div id="toast"></div>
+<div id="fade"></div>
+
+<div id="start">
+  <div class="start-card" id="startCard"></div>
+</div>
+<div id="rotate"><div>📱↻<br>Bitte das iPad quer halten</div></div>
+
+<script>
+(() => {
+'use strict';
+// =====================================================================  Grundwerte
+const LINE = '#5b3d4a', LW = 2.2;
+const FLOOR_Y = 800;               // Bodenlinie aller Szenen
+const VH = 900;                    // Höhe der Spielwelt (Breite passt sich dem Bildschirm an)
+const SKIN = { hell: '#f6d2b8', mittel: '#e2ad84', dunkel: '#8a5636' };
+const HAIR = { braun: '#7a4a2b', blond: '#f0cc6e', hellblond: '#f6dc8f', schwarz: '#2a2030', dunkelbraun: '#4a2c1c', rot: '#c4562e' };
+const EYES = { braun: '#4a3528', blau: '#3f6fb0', gruen: '#3f8a5a', grau: '#6b7280' };
+const SOFA_IMG = 'data:image/webp;base64,{{SOFA}}';
+const KLEID_IMG = 'data:image/webp;base64,{{KLEID}}';
+
+// =====================================================================  Figuren-Baukasten
+function outlined(d, color, w) {
+  return `<path d="${d}" fill="none" stroke="${LINE}" stroke-width="${w + LW * 2}" stroke-linecap="round" stroke-linejoin="round"/>` +
+         `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+function hairBack(style, c) {
+  const s = `stroke="${LINE}" stroke-width="${LW}"`;
+  if (style === 'lang_glatt') return `<path d="M-40 -238 C-46 -286 46 -286 40 -238 L46 -150 Q48 -128 40 -122 Q0 -112 -40 -122 Q-48 -128 -46 -150 Z" fill="${c}" ${s}/>`;
+  if (style === 'schulter') return `<path d="M-40 -238 C-46 -286 46 -286 40 -238 L44 -196 Q46 -182 34 -180 Q0 -176 -34 -180 Q-46 -182 -44 -196 Z" fill="${c}" ${s}/>`;
+  if (style === 'locken_lang') {
+    const pts = [[-40,-250],[-44,-228],[-46,-206],[-44,-184],[-38,-166],[40,-250],[44,-228],[46,-206],[44,-184],[38,-166],[-30,-270],[30,-270],[0,-280],[-16,-278],[16,-278]];
+    return pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="16" fill="${c}" ${s}/>`).join('') +
+      `<path d="M-44 -250 Q0 -300 44 -250 L42 -170 Q0 -160 -42 -170 Z" fill="${c}"/>`;
+  }
+  if (style === 'zopf') return `<path d="M-40 -238 C-46 -286 46 -286 40 -238 L40 -214 Q0 -206 -40 -214 Z" fill="${c}" ${s}/>` +
+      [0,1,2,3].map(k => `<ellipse cx="${30 + k * 3}" cy="${-200 + k * 22}" rx="11" ry="13" fill="${c}" ${s}/>`).join('');
+  if (style === 'dutt') return `<circle cx="0" cy="-282" r="17" fill="${c}" ${s}/>`;
+  return '';
+}
+function hairFront(style, c) {
+  const s = `stroke="${LINE}" stroke-width="${LW}"`;
+  switch (style) {
+    case 'lang_glatt': case 'zopf':
+      return `<path d="M-37 -234 C-40 -284 40 -284 37 -234 Q30 -258 2 -264 Q-30 -258 -37 -234 Z" fill="${c}" ${s}/>`;
+    case 'schulter':
+      return `<path d="M-37 -236 C-40 -284 40 -284 37 -236 Q28 -262 4 -262 Q-2 -256 -10 -252 Q-28 -248 -37 -236 Z" fill="${c}" ${s}/>`;
+    case 'locken_lang':
+      return [[-26,-262,12],[-8,-268,12],[10,-268,12],[27,-261,12],[-36,-246,10],[36,-246,10]].map(([x,y,r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" ${s}/>`).join('');
+    case 'dutt':
+      return `<path d="M-36 -234 C-38 -280 38 -280 36 -234 Q30 -262 0 -266 Q-30 -262 -36 -234 Z" fill="${c}" ${s}/><path d="M-2 -268 Q-14 -256 -30 -246" stroke="${LINE}" stroke-width="1.3" fill="none" opacity=".5"/>`;
+    case 'kurz':
+      return `<path d="M-37 -230 C-42 -286 42 -286 37 -230 Q34 -250 26 -256 Q6 -248 -12 -258 Q-30 -252 -37 -230 Z" fill="${c}" ${s}/>`;
+    case 'seitenscheitel':
+      return `<path d="M-37 -230 C-42 -286 42 -286 37 -230 Q35 -248 28 -254 Q10 -262 -14 -262 Q-30 -254 -37 -230 Z" fill="${c}" ${s}/><path d="M-14 -262 Q-4 -276 6 -278" stroke="${LINE}" stroke-width="1.4" fill="none" opacity=".55"/>`;
+    case 'gegelt':
+      return `<path d="M-37 -232 C-40 -268 -26 -284 -4 -292 Q20 -300 34 -286 Q26 -284 22 -280 C36 -272 40 -252 37 -232 Q32 -258 4 -262 Q-26 -258 -37 -232 Z" fill="${c}" ${s} stroke-linejoin="round"/><path d="M-20 -266 Q-6 -284 18 -288 M-28 -254 Q-14 -272 6 -276" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".75"/>`;
+    case 'wellig':
+      return `<path d="M-37 -230 C-42 -288 42 -288 37 -230 Q36 -250 28 -256 Q20 -246 10 -256 Q0 -246 -10 -256 Q-20 -246 -28 -256 Q-36 -250 -37 -230 Z" fill="${c}" ${s}/>`;
+    case 'locken_kurz': {
+      const cs = [[-30,-250],[-20,-266],[-4,-273],[13,-271],[27,-261],[35,-244],[-36,-236],[36,-232]];
+      return `<path d="M-36 -236 C-38 -284 38 -284 36 -236 Z" fill="${c}"/>` + cs.map(([x,y]) => `<circle cx="${x}" cy="${y}" r="12" fill="${c}" ${s}/>`).join('');
+    }
+  }
+  return '';
+}
+function face(expr, eye) {
+  const ey = -234; let o = '';
+  if (expr === 'eingebildet') {
+    for (const sx of [-1, 1]) { const x = sx * 13;
+      o += `<path d="M${x-7} ${ey} q7 7 14 0" fill="${eye}" stroke="${LINE}" stroke-width="1.5"/><path d="M${x-8} ${ey} h16" stroke="${LINE}" stroke-width="2.4" stroke-linecap="round"/>`; }
+    o += `<path d="M-20 ${ey-14} q7 -4 14 0" stroke="${LINE}" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M6 ${ey-19} q8 -5 15 1" stroke="${LINE}" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M-6 ${ey+20} q10 4 16 -4" stroke="${LINE}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+  } else {
+    const lk = expr === 'schuechtern' ? [-2, 2] : [0, 0];
+    for (const sx of [-1, 1]) { const x = sx * 13;
+      o += `<ellipse cx="${x}" cy="${ey}" rx="6" ry="7.5" fill="#fff" stroke="${LINE}" stroke-width="1.4"/><ellipse class="pupil" cx="${x+lk[0]}" cy="${ey+1+lk[1]}" rx="4.6" ry="5.8" fill="${eye}"/><circle cx="${x+lk[0]+1.6}" cy="${ey-1.5+lk[1]}" r="1.8" fill="#fff"/>`;
+      if (expr === 'streng') o += `<path d="M${x+9*sx} ${ey-17} L${x-7*sx} ${ey-11}" stroke="${LINE}" stroke-width="2.6" stroke-linecap="round"/>`;
+      else if (expr === 'schuechtern') o += `<path d="M${x-7} ${ey-12} q7 -4 14 0" transform="rotate(${8*sx} ${x} ${ey-12})" stroke="${LINE}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+      else o += `<path d="M${x-7} ${ey-13} q7 -6 14 0" stroke="${LINE}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+    }
+    if (expr === 'froh') o += `<path d="M-9 ${ey+15} q9 13 18 0 z" fill="#b8475c" stroke="${LINE}" stroke-width="1.6" stroke-linejoin="round"/><path d="M-4 ${ey+21} q4 -3 8 0" fill="#f28a9b"/>`;
+    else if (expr === 'streng') o += `<path d="M-7 ${ey+19} h14" stroke="${LINE}" stroke-width="2.2" stroke-linecap="round"/>`;
+    else if (expr === 'schuechtern') o += `<path d="M-4 ${ey+18} q4 3 8 0" stroke="${LINE}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    else o += `<path d="M-8 ${ey+16} q8 8 16 0" stroke="${LINE}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
+  }
+  const bl = expr === 'schuechtern' ? .75 : .45;
+  o += `<ellipse cx="-22" cy="${ey+12}" rx="6.5" ry="4" fill="#f28a9b" opacity="${bl}"/><ellipse cx="22" cy="${ey+12}" rx="6.5" ry="4" fill="#f28a9b" opacity="${bl}"/>`;
+  o += `<path d="M-1 ${ey+8} q2 3 4 0" stroke="${LINE}" stroke-width="1.4" fill="none" opacity=".6"/>`;
+  return o;
+}
+const ARM = {
+  unten: [s => `M${s*23} -186 Q${s*36} -150 ${s*37} -112`, [37, -112]],
+  offen: [s => `M${s*23} -186 Q${s*52} -184 ${s*84} -170`, [84, -170]],
+  oben: [s => `M${s*23} -186 Q${s*52} -236 ${s*16} -292`, [16, -292]],
+  huefte: [s => `M${s*23} -186 L${s*48} -156 L${s*24} -128`, null],
+  winken: [s => `M${s*23} -186 Q${s*52} -210 ${s*54} -258`, [54, -258]],
+  buch: [s => `M${s*23} -186 Q${s*32} -150 ${s*12} -146`, [12, -146]],
+};
+function arm(pose, s, sleeve) {
+  const [fn, end] = ARM[pose];
+  let o = outlined(fn(s), sleeve, 11);
+  if (end) o += `<circle cx="${s*end[0]}" cy="${end[1]}" r="7.5" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
+  return o;
+}
+/* look: {kind:'w'|'m'|'lehrerin', skin, hair, hairStyle, eyes, color, tutu, expr, arms:[l,r], extra, height} */
+function figureSVG(look, opts = {}) {
+  const skin = SKIN[look.skin] || look.skin, hc = HAIR[look.hair] || look.hair, eye = EYES[look.eyes] || look.eyes || EYES.braun;
+  const k = look.kind, col = look.color, arms = opts.arms || look.arms || ['unten', 'unten'];
+  let g = `<g style="--skin:${skin}">`;
+  if (!opts.noShadow) g += `<ellipse cx="0" cy="2" rx="50" ry="8" fill="#000" opacity=".13"/>`;
+  g += hairBack(look.hairStyle, hc);
+  const leg = k === 'w' ? '#f3cfd6' : (k === 'lehrerin' ? '#2f2838' : '#3a3550');
+  g += `<g class="legs">` + outlined('M-11 -116 L-13 -10', leg, 15) + outlined('M11 -116 L13 -10', leg, 15);
+  const shoe = k === 'm' ? '#f4f0ea' : '#f7b6c8';
+  g += `<ellipse cx="-15" cy="-5" rx="11" ry="6" fill="${shoe}" stroke="${LINE}" stroke-width="${LW}"/><ellipse cx="15" cy="-5" rx="11" ry="6" fill="${shoe}" stroke="${LINE}" stroke-width="${LW}"/></g>`;
+  g += `<rect x="-8" y="-206" width="16" height="22" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
+  if (k === 'w') {
+    const t = look.tutu || col;
+    g += `<path d="M-23 -190 Q0 -184 23 -190 L19 -150 Q16 -130 20 -116 L-20 -116 Q-16 -130 -19 -150 Z" fill="${col}" stroke="${LINE}" stroke-width="${LW}" stroke-linejoin="round"/>`;
+    g += `<path d="M-15 -190 Q0 -178 15 -190" fill="var(--skin)" stroke="${LINE}" stroke-width="1.6"/>`;
+    g += `<ellipse cx="0" cy="-120" rx="64" ry="13" fill="${t}" stroke="${LINE}" stroke-width="${LW}" opacity=".9"/>`;
+    g += `<path d="M-64 -121 Q-46 -100 -34 -111 Q-22 -98 -11 -109 Q0 -97 11 -109 Q22 -98 34 -111 Q46 -100 64 -121 Q0 -140 -64 -121 Z" fill="${t}" stroke="${LINE}" stroke-width="${LW}" stroke-linejoin="round"/>`;
+    g += `<path d="M-40 -116 l-4 8 M-14 -112 l-2 9 M14 -112 l2 9 M40 -116 l4 8" stroke="#fff" stroke-width="2" opacity=".7"/>`;
+  } else if (k === 'm') {
+    g += `<path d="M-25 -190 Q0 -184 25 -190 L23 -150 L21 -110 L-21 -110 L-23 -150 Z" fill="${col}" stroke="${LINE}" stroke-width="${LW}" stroke-linejoin="round"/>`;
+    g += `<path d="M-9 -190 Q0 -180 9 -190" fill="var(--skin)" stroke="${LINE}" stroke-width="1.6"/><rect x="-22" y="-118" width="44" height="8" fill="#3a3550" stroke="${LINE}" stroke-width="1.6"/>`;
+  } else {
+    g += `<path d="M-22 -190 Q0 -184 22 -190 L18 -150 Q15 -132 19 -118 L-19 -118 Q-15 -132 -18 -150 Z" fill="${col}" stroke="${LINE}" stroke-width="${LW}"/>`;
+    g += `<path d="M-13 -190 Q0 -170 13 -190" fill="var(--skin)" stroke="${LINE}" stroke-width="1.6"/>`;
+    g += `<path d="M-22 -124 Q0 -130 22 -124 L36 -62 Q0 -52 -36 -62 Z" fill="#3b3346" stroke="${LINE}" stroke-width="${LW}"/>`;
+    for (let i = 0; i < 7; i++) g += `<circle cx="${-12 + i * 4}" cy="${-180 - Math.abs(3 - i) * 1.6}" r="2.2" fill="#fff" stroke="#c9c2cc" stroke-width=".8"/>`;
+  }
+  const sleeve = k === 'w' ? 'var(--skin)' : (k === 'm' ? col : '#2f2838');
+  if (arms[0] !== 'oben') g += arm(arms[0], -1, sleeve);
+  if (arms[1] !== 'oben') g += arm(arms[1], 1, sleeve);
+  g += `<ellipse cx="-35" cy="-234" rx="6" ry="8" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/><ellipse cx="35" cy="-234" rx="6" ry="8" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
+  g += `<ellipse cx="0" cy="-236" rx="35" ry="37" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
+  g += face(look.expr || 'nett', eye);
+  g += hairFront(look.hairStyle, hc);
+  const ex = look.extra;
+  if (ex === 'kopfhoerer') g += `<path d="M-30 -184 Q0 -164 30 -184" fill="none" stroke="#e85d8a" stroke-width="5"/><rect x="-36" y="-192" width="13" height="18" rx="5" fill="#e85d8a" stroke="${LINE}" stroke-width="1.6"/><rect x="23" y="-192" width="13" height="18" rx="5" fill="#e85d8a" stroke="${LINE}" stroke-width="1.6"/>`;
+  if (ex === 'diadem') g += `<path d="M-20 -266 L-14 -280 L-6 -270 L0 -286 L6 -270 L14 -280 L20 -266 Z" fill="#f6c64b" stroke="${LINE}" stroke-width="1.6"/><circle cx="0" cy="-277" r="3" fill="#f28ab0"/>`;
+  if (ex === 'buch') g += `<g transform="rotate(-6 0 -150)"><rect x="-26" y="-170" width="52" height="36" rx="3" fill="#7fa6e0" stroke="${LINE}" stroke-width="${LW}"/><line x1="0" y1="-170" x2="0" y2="-134" stroke="${LINE}" stroke-width="1.6"/><path d="M-20 -160 h14 M-20 -152 h12 M6 -160 h14 M6 -152 h10" stroke="#fff" stroke-width="2"/></g>`;
+  if (arms[0] === 'oben') g += arm('oben', -1, sleeve);
+  if (arms[1] === 'oben') g += arm('oben', 1, sleeve);
+  return g + '</g>';
+}
+function star(x, y, r = 12) {
+  return `<path transform="translate(${x},${y}) scale(${r / 11})" d="M0 -11 l3.2 6.6 7.3 1 -5.3 5.1 1.3 7.3 -6.5 -3.5 -6.5 3.5 1.3 -7.3 -5.3 -5.1 7.3 -1 z" fill="#f6c64b" stroke="${LINE}" stroke-width="1.6"/>`;
+}
+
+// =====================================================================  Figuren der Schule
+const CHARS = {
+  elisabeth: { name: 'Elisabeth', room: 1, look: { kind: 'w', skin: 'hell', hair: 'braun', hairStyle: 'locken_lang', color: '#b9a2e6', tutu: '#d8c9f5', arms: ['unten', 'oben'], expr: 'nett' } },
+  johanna: { name: 'Johanna', room: 2, look: { kind: 'w', skin: 'hell', hair: 'blond', hairStyle: 'schulter', color: '#8fd3b6', tutu: '#bfe8d4', arms: ['unten', 'winken'], expr: 'froh', extra: 'kopfhoerer' } },
+  marie: { name: 'Marie', room: 3, look: { kind: 'w', skin: 'hell', hair: 'hellblond', hairStyle: 'lang_glatt', color: '#f6f0f4', tutu: '#fff7fb', arms: ['huefte', 'oben'], expr: 'eingebildet', extra: 'diadem', eyes: 'blau' } },
+  nora: { name: 'Nora', room: 4, look: { kind: 'w', skin: 'mittel', hair: 'schwarz', hairStyle: 'lang_glatt', color: '#9ad1f5', tutu: '#c9e8fa', arms: ['buch', 'buch'], expr: 'schuechtern', extra: 'buch', height: .9 } },
+  leon: { name: 'Leon', room: 6, look: { kind: 'm', skin: 'hell', hair: 'schwarz', hairStyle: 'kurz', color: '#4b6fb5', arms: ['offen', 'offen'], expr: 'froh', height: 1.08 } },
+  levi: { name: 'Levi', room: 7, look: { kind: 'm', skin: 'hell', hair: 'braun', hairStyle: 'seitenscheitel', color: '#5aa58a', arms: ['unten', 'oben'], expr: 'froh' } },
+  tom: { name: 'Tom', room: 8, look: { kind: 'm', skin: 'hell', hair: 'blond', hairStyle: 'gegelt', color: '#e0574f', arms: ['huefte', 'huefte'], expr: 'eingebildet', height: .9 } },
+  samy: { name: 'Samy', room: 9, look: { kind: 'm', skin: 'dunkel', hair: 'dunkelbraun', hairStyle: 'wellig', color: '#f2b84b', arms: ['unten', 'winken'], expr: 'nett', height: 1.08 } },
+  colletin: { name: 'Madame Colletin', look: { kind: 'lehrerin', skin: 'hell', hair: 'schwarz', hairStyle: 'dutt', color: '#2a2430', arms: ['unten', 'offen'], expr: 'streng', height: 1.12 } },
+};
+const DANCERS = ['elisabeth', 'johanna', 'marie', 'nora', 'leon', 'levi', 'tom', 'samy'];
+// Dachterrasse: je nach Tageszeit (und an geraden/ungeraden Tagen verschieden) sind Figuren oben
+const TERRACE_PLAN = {
+  morgen: [['levi'], ['elisabeth']],
+  tag: [['nora', 'samy'], ['marie', 'tom']],
+  abend: [['johanna', 'leon'], ['johanna', 'elisabeth', 'levi']],
+  nacht: [[], []],
+};
+function onTerrace() { const v = new Date().getDate() % 2; return TERRACE_PLAN[phase()][v]; }
+const residentOf = room => Object.keys(CHARS).find(id => CHARS[id].room === room);
+
+// =====================================================================  Spielstand
+const SAVE_KEY = 'etoile-save-v1';
+let S = null;   // Spielstand
+const defaultState = () => ({ player: null, room: null, stars: 0, met: [], greetedTeacher: false, scene: 'floor0', x: 980, sound: true });
+function load() { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); return s && s.player ? s : null; } catch (e) { return null; } }
+function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* ohne Speicher weiterspielen */ } }
+const W = () => S.player.kind === 'w';
+const schueler = () => W() ? 'Schülerin' : 'Schüler';
+
+// =====================================================================  Hintergrund-Bausteine
+// Tageszeit: richtet sich nach der Uhr des Geräts (im Menü umstellbar)
+const PHASES = { morgen: 'Morgen', tag: 'Tag', abend: 'Abend', nacht: 'Nacht' };
+function phase() {
+  if (S && S.timeOverride) return S.timeOverride;
+  const h = new Date().getHours();
+  return h >= 6 && h < 9 ? 'morgen' : h >= 9 && h < 17 ? 'tag' : h >= 17 && h < 21 ? 'abend' : 'nacht';
+}
+const SKYCOL = {
+  morgen: { tower: '#9a86a8', towerLine: '#7d6a8d', roofs: ['#a99bbd', '#9d8fb3', '#b4a7c6'], lit: '#ffe7a0', litOp: .35 },
+  tag:    { tower: '#8a7fa3', towerLine: '#6f6589', roofs: ['#9aa6c4', '#8f9bbb', '#a6b0cb'], lit: '#dceefb', litOp: .9 },
+  abend:  { tower: '#5e4a6e', towerLine: '#4a3a58', roofs: ['#6f5f86', '#65577c', '#7a6a90'], lit: '#ffd77a', litOp: .95 },
+  nacht:  { tower: '#2c2640', towerLine: '#1f1a30', roofs: ['#343552', '#2e2f4a', '#3a3b5a'], lit: '#ffd77a', litOp: 1 },
+};
+function skyExtras(x, y, w, h, ph) {
+  // Sonne, Mond, Sterne
+  if (ph === 'morgen') return `<circle cx="${x + w * 0.22}" cy="${y + h * 0.66}" r="${h * 0.09}" fill="#ffd27a"/><circle cx="${x + w * 0.22}" cy="${y + h * 0.66}" r="${h * 0.16}" fill="#ffd27a" opacity=".25"/>`;
+  if (ph === 'tag') return `<circle cx="${x + w * 0.2}" cy="${y + h * 0.2}" r="${h * 0.075}" fill="#fff6c9"/><circle cx="${x + w * 0.2}" cy="${y + h * 0.2}" r="${h * 0.13}" fill="#fff6c9" opacity=".3"/>` +
+    `<g fill="#fff" opacity=".85"><ellipse cx="${x + w * 0.45}" cy="${y + h * 0.16}" rx="${w * 0.09}" ry="${h * 0.035}"/><ellipse cx="${x + w * 0.52}" cy="${y + h * 0.13}" rx="${w * 0.06}" ry="${h * 0.04}"/></g>`;
+  if (ph === 'abend') return `<circle cx="${x + w * 0.78}" cy="${y + h * 0.7}" r="${h * 0.11}" fill="#ff9a5a"/><circle cx="${x + w * 0.78}" cy="${y + h * 0.7}" r="${h * 0.2}" fill="#ff9a5a" opacity=".22"/>`;
+  let st = '';
+  for (let i = 0; i < 26; i++) { const sx = x + ((i * 53) % 97) / 97 * w, sy = y + ((i * 31) % 59) / 59 * h * 0.6; st += `<circle class="twinkle" style="animation-delay:${(i % 7) * .4}s" cx="${sx}" cy="${sy}" r="${1.2 + (i % 3) * .7}" fill="#fff"/>`; }
+  return st + `<circle cx="${x + w * 0.2}" cy="${y + h * 0.2}" r="${h * 0.065}" fill="#fdf3c8"/><circle cx="${x + w * 0.2 + h * 0.03}" cy="${y + h * 0.18}" r="${h * 0.06}" fill="url(#sky_nacht)"/>`;
+}
+function eiffelTower(cx, base, s, ph) {
+  const c = SKYCOL[ph];
+  let o = `<g transform="translate(${cx},${base}) scale(${s})" fill="${c.tower}" stroke="${c.towerLine}" stroke-width="2">
+      <path d="M-95 0 Q-40 -120 -14 -300 L-6 -420 L6 -420 L14 -300 Q40 -120 95 0 L60 0 Q30 -60 0 -62 Q-30 -60 -60 0 z"/>
+      <rect x="-52" y="-120" width="104" height="10" rx="2"/><rect x="-26" y="-260" width="52" height="8" rx="2"/>`;
+  if (ph === 'nacht' || ph === 'abend') {
+    // goldene Beleuchtung, nachts glitzert er
+    o += `<path d="M-80 -4 Q-36 -120 -12 -300 L-5 -416 M80 -4 Q36 -120 12 -300 L5 -416" fill="none" stroke="#ffcf6a" stroke-width="5" opacity="${ph === 'nacht' ? .9 : .5}"/>`;
+    if (ph === 'nacht') for (let i = 0; i < 18; i++) { const t = i / 17, yy = -10 - t * 400, xx = (1 - t) * 70 * (i % 2 ? 1 : -1); o += `<circle class="twinkle" style="animation-delay:${(i % 6) * .3}s" cx="${xx}" cy="${yy}" r="5" fill="#fff8d0" stroke="none"/>`; }
+  }
+  return o + '</g>';
+}
+function eiffelView(x, y, w, h, id) {
+  // Fenster mit Blick über die Dächer von Paris auf den Eiffelturm, passend zur Tageszeit
+  const ph = phase(), c = SKYCOL[ph];
+  let roofs = '';
+  for (let i = 0; i < 9; i++) {
+    const rx = x - 10 + i * (w / 7), rh = h * (0.18 + ((i * 37) % 5) * 0.03);
+    roofs += `<path d="M${rx} ${y + h} v-${rh} l${w / 14} -${h * 0.07} l${w / 14} ${h * 0.07} v${rh} z" fill="${c.roofs[i % 3]}"/>`;
+    roofs += `<rect x="${rx + w / 20}" y="${y + h - rh + 8}" width="${w / 40}" height="${h / 22}" fill="${c.lit}" opacity="${c.litOp}"/>`;
+  }
+  return `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10"/></clipPath>
+    <g clip-path="url(#${id})"><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#sky_${ph})"/>
+    ${skyExtras(x, y, w, h, ph)}${eiffelTower(x + w * 0.62, y + h * 0.84, Math.min(h, w * 1.25) / 420, ph)}${roofs}</g>`;
+}
+function windowFrame(x, y, w, h, curtain, id) {
+  return `<rect x="${x - 14}" y="${y - 14}" width="${w + 28}" height="${h + 28}" rx="16" fill="#fff" stroke="${LINE}" stroke-width="2"/>` +
+    eiffelView(x, y, w, h, id) +
+    `<line x1="${x + w / 2}" y1="${y}" x2="${x + w / 2}" y2="${y + h}" stroke="#fff" stroke-width="8"/><line x1="${x}" y1="${y + h * 0.42}" x2="${x + w}" y2="${y + h * 0.42}" stroke="#fff" stroke-width="8"/>` +
+    `<rect x="${x - 26}" y="${y + h + 12}" width="${w + 52}" height="14" rx="5" fill="#e9dccb" stroke="${LINE}" stroke-width="2"/>` +
+    `<path d="M${x - 40} ${y - 30} h${w * 0.24} q-${w * 0.08} ${h * 0.5} ${w * 0.02} ${h + 40} h-${w * 0.26} z" fill="${curtain}" stroke="${LINE}" stroke-width="2"/>` +
+    `<path d="M${x + w + 40} ${y - 30} h-${w * 0.24} q${w * 0.08} ${h * 0.5} -${w * 0.02} ${h + 40} h${w * 0.26} z" fill="${curtain}" stroke="${LINE}" stroke-width="2"/>` +
+    `<rect x="${x - 60}" y="${y - 40}" width="${w + 120}" height="12" rx="6" fill="#c99b74"/>`;
+}
+function frenchWindow(x, w, curtain, id) {
+  // Französisches Fenster bis zum Boden, so hoch wie die Tür, mit kleinem Balkongitter
+  const top = FLOOR_Y - 360, h = 352, bot = top + h;
+  let o = `<rect x="${x - 70}" y="${top - 54}" width="${w + 140}" height="12" rx="6" fill="#c99b74"/>`;
+  o += `<rect x="${x - 16}" y="${top - 16}" width="${w + 32}" height="${h + 16}" rx="6" fill="#fff" stroke="${LINE}" stroke-width="2"/>`;
+  o += eiffelView(x, top, w, h, id);
+  // Balkongitter draußen (schmiedeeisern)
+  const gy = bot - 104;
+  o += `<path d="M${x} ${gy} H${x + w} M${x} ${bot - 10} H${x + w}" stroke="#3d3f52" stroke-width="5"/>`;
+  for (let gx = x + 14; gx < x + w; gx += 22) o += `<path d="M${gx} ${gy} V${bot - 10}" stroke="#3d3f52" stroke-width="2.5"/>`;
+  for (let gx = x + 10; gx < x + w - 30; gx += 56) o += `<path d="M${gx} ${gy + 40} q14 -22 28 0 q14 22 28 0" fill="none" stroke="#3d3f52" stroke-width="2.5"/>`;
+  // Fensterflügel mit Sprossen
+  o += `<rect x="${x}" y="${top}" width="${w}" height="${h}" fill="none" stroke="#fff" stroke-width="8"/>`;
+  o += `<line x1="${x + w / 2}" y1="${top}" x2="${x + w / 2}" y2="${bot}" stroke="#fff" stroke-width="10"/>`;
+  for (const f of [.25, .5, .75]) o += `<line x1="${x}" y1="${top + h * f}" x2="${x + w}" y2="${top + h * f}" stroke="#fff" stroke-width="5"/>`;
+  o += `<circle cx="${x + w / 2 - 12}" cy="${top + h * 0.55}" r="5" fill="#d9b36c" stroke="${LINE}" stroke-width="1.5"/><circle cx="${x + w / 2 + 12}" cy="${top + h * 0.55}" r="5" fill="#d9b36c" stroke="${LINE}" stroke-width="1.5"/>`;
+  o += `<rect x="${x - 24}" y="${top - 34}" width="${w + 48}" height="18" rx="4" fill="#efe3d3" stroke="${LINE}" stroke-width="2"/>`;
+  // bodenlange Vorhänge, seitlich zusammengebunden
+  const tie = FLOOR_Y - 190;
+  o += `<path d="M${x - 64} ${top - 50} h70 q-6 ${tie - top} -20 ${tie - top + 46} q-24 70 -14 ${FLOOR_Y - tie + 4} h-48 q-6 -120 8 -${FLOOR_Y - tie - 30} q-14 -${tie - top - 40} 4 -${tie - top + 20} z" fill="${curtain}" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<path d="M${x + w + 64} ${top - 50} h-70 q6 ${tie - top} 20 ${tie - top + 46} q24 70 14 ${FLOOR_Y - tie + 4} h48 q6 -120 -8 -${FLOOR_Y - tie - 30} q14 -${tie - top - 40} -4 -${tie - top + 20} z" fill="${curtain}" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<rect x="${x - 48}" y="${tie - 2}" width="34" height="12" rx="6" fill="#d9b36c" stroke="${LINE}" stroke-width="1.5"/><rect x="${x + w + 14}" y="${tie - 2}" width="34" height="12" rx="6" fill="#d9b36c" stroke="${LINE}" stroke-width="1.5"/>`;
+  return o;
+}
+function picture(x, y, color) {
+  return `<g><rect x="${x}" y="${y}" width="110" height="84" rx="4" fill="#d9b36c" stroke="${LINE}" stroke-width="2"/><rect x="${x + 9}" y="${y + 9}" width="92" height="66" fill="${color}"/>` +
+    `<circle cx="${x + 55}" cy="${y + 30}" r="9" fill="#fff" opacity=".8"/><path d="M${x + 55} ${y + 40} l-16 28 h32 z" fill="#fff" opacity=".8"/><path d="M${x + 30} ${y + 56} q25 -14 50 0" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/></g>`;
+}
+function wallBase(w, wall, floorA = '#d9b48c', floorB = '#c99f74') {
+  // Wand mit Pariser Kassetten-Täfelung und Fischgrät-Parkett
+  let o = `<rect x="-600" y="0" width="${w + 1200}" height="${VH}" fill="${wall}"/>`;
+  o += `<rect x="-600" y="0" width="${w + 1200}" height="40" fill="#fff" opacity=".35"/>`;
+  o += `<rect x="-600" y="${FLOOR_Y - 200}" width="${w + 1200}" height="8" fill="#fff" opacity=".7"/>`;
+  for (let px = -560; px < w + 560; px += 200) o += `<rect x="${px + 14}" y="${FLOOR_Y - 180}" width="172" height="150" rx="6" fill="none" stroke="#fff" stroke-width="4" opacity=".55"/>`;
+  o += `<rect x="-600" y="${FLOOR_Y - 26}" width="${w + 1200}" height="26" fill="#fff" opacity=".75"/>`;
+  o += `<rect x="-600" y="${FLOOR_Y}" width="${w + 1200}" height="${VH - FLOOR_Y}" fill="${floorA}"/>`;
+  for (let px = -600; px < w + 600; px += 60) {
+    o += `<path d="M${px} ${FLOOR_Y} l30 ${VH - FLOOR_Y}" stroke="${floorB}" stroke-width="3"/>`;
+  }
+  o += `<rect x="-600" y="${FLOOR_Y}" width="${w + 1200}" height="6" fill="#000" opacity=".08"/>`;
+  return o;
+}
+function sconce(x) {
+  return `<g><path d="M${x} 300 v30" stroke="#b8945c" stroke-width="5"/><path d="M${x - 22} 280 h44 l-8 -36 h-28 z" fill="#ffe7a0" stroke="${LINE}" stroke-width="2"/><circle cx="${x}" cy="262" r="60" fill="#fff3c4" opacity=".18"/></g>`;
+}
+function poster(x, y, title, color) {
+  return `<g><rect x="${x}" y="${y}" width="120" height="160" rx="4" fill="#d9b36c" stroke="${LINE}" stroke-width="2"/><rect x="${x + 10}" y="${y + 10}" width="100" height="140" fill="${color}"/>` +
+    `<circle cx="${x + 60}" cy="${y + 66}" r="22" fill="#fff" opacity=".7"/><path d="M${x + 60} ${y + 90} l-20 40 h40 z" fill="#fff" opacity=".7"/>` +
+    `<text x="${x + 60}" y="${y + 140}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff">${title}</text></g>`;
+}
+function door(x, label, act, opts = {}) {
+  // Holztür mit Namensschild. act = Aktion beim Antippen
+  const w = opts.w || 150, h = 330, top = FLOOR_Y - h, col = opts.color || '#a8613f', dark = opts.dark || '#8a4c30';
+  let o = `<g data-act="${act}" style="cursor:pointer">`;
+  o += `<rect x="${x - w / 2 - 14}" y="${top - 14}" width="${w + 28}" height="${h + 14}" rx="10" fill="#efe3d3" stroke="${LINE}" stroke-width="2"/>`;
+  if (opts.double) {
+    o += `<rect x="${x - w / 2}" y="${top}" width="${w / 2}" height="${h}" fill="${col}" stroke="${LINE}" stroke-width="2"/><rect x="${x}" y="${top}" width="${w / 2}" height="${h}" fill="${col}" stroke="${LINE}" stroke-width="2"/>`;
+    o += `<rect x="${x - w / 2 + 14}" y="${top + 20}" width="${w / 2 - 28}" height="140" rx="40" fill="#dceefb" stroke="${LINE}" stroke-width="2"/><rect x="${x + 14}" y="${top + 20}" width="${w / 2 - 28}" height="140" rx="40" fill="#dceefb" stroke="${LINE}" stroke-width="2"/>`;
+    o += `<circle cx="${x - 12}" cy="${top + 190}" r="6" fill="#f6d26b" stroke="${LINE}"/><circle cx="${x + 12}" cy="${top + 190}" r="6" fill="#f6d26b" stroke="${LINE}"/>`;
+  } else {
+    o += `<rect x="${x - w / 2}" y="${top}" width="${w}" height="${h}" rx="4" fill="${col}" stroke="${LINE}" stroke-width="2"/>`;
+    o += `<rect x="${x - w / 2 + 16}" y="${top + 20}" width="${w - 32}" height="120" rx="6" fill="none" stroke="${dark}" stroke-width="4"/>`;
+    o += `<rect x="${x - w / 2 + 16}" y="${top + 170}" width="${w - 32}" height="130" rx="6" fill="none" stroke="${dark}" stroke-width="4"/>`;
+    o += `<circle cx="${x + w / 2 - 22}" cy="${top + 160}" r="8" fill="#f6d26b" stroke="${LINE}" stroke-width="2"/>`;
+  }
+  // Schild
+  const lines = Array.isArray(label) ? label : [label];
+  const sw = Math.max(w + 10, Math.max(...lines.map(l => l.length)) * 11 + 30), sh = 24 + lines.length * 22;
+  const sy = top - 34 - sh;
+  o += `<rect x="${x - sw / 2}" y="${sy}" width="${sw}" height="${sh}" rx="12" fill="${opts.plate || '#fff8f0'}" stroke="${opts.mine ? '#c2456e' : '#d9b36c'}" stroke-width="${opts.mine ? 4 : 3}"/>`;
+  lines.forEach((l, i) => { o += `<text x="${x}" y="${sy + 30 + i * 22}" text-anchor="middle" font-size="${i ? 17 : 19}" font-weight="${i ? 700 : 800}" fill="${i ? LINE : '#7a3e5c'}">${l}</text>`; });
+  o += `<rect x="${x - w / 2 - 20}" y="${sy - 10}" width="${w + 40}" height="${FLOOR_Y - sy + 10}" fill="transparent"/>`;
+  return o + '</g>';
+}
+function stairs(x, act) {
+  let o = `<g data-act="${act}" style="cursor:pointer"><rect x="${x - 150}" y="${FLOOR_Y - 420}" width="300" height="420" fill="#efe4d6" stroke="${LINE}" stroke-width="2"/>`;
+  for (let i = 0; i < 8; i++) o += `<rect x="${x - 150 + i * 36}" y="${FLOOR_Y - 46 - i * 46}" width="${300 - i * 36}" height="46" fill="#d7b996" stroke="#b08a66" stroke-width="2"/>`;
+  o += `<path d="M${x - 140} ${FLOOR_Y - 90} L${x + 140} ${FLOOR_Y - 420}" stroke="#a87449" stroke-width="7" stroke-linecap="round"/>`;
+  o += `<rect x="${x - 82}" y="${FLOOR_Y - 520}" width="164" height="70" rx="14" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/>`;
+  o += `<text x="${x}" y="${FLOOR_Y - 489}" text-anchor="middle" font-size="22" font-weight="800" fill="#7a3e5c">Treppe</text>`;
+  o += `<text x="${x}" y="${FLOOR_Y - 464}" text-anchor="middle" font-size="16" font-weight="700" fill="${LINE}">▲ ▼ Stockwerk</text>`;
+  return o + '</g>';
+}
+function bedSVG(x, color, mine, w = 260) {
+  const y = FLOOR_Y;
+  let o = `<g><rect x="${x}" y="${y - 170}" width="22" height="170" rx="8" fill="#b98a63" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<rect x="${x + w - 18}" y="${y - 110}" width="18" height="110" rx="7" fill="#b98a63" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<rect x="${x + 10}" y="${y - 96}" width="${w - 20}" height="44" rx="12" fill="#fff" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<path d="M${x + 80} ${y - 104} h${w - 96} q10 0 10 12 v40 h-${w - 86} z" fill="${color}" stroke="${LINE}" stroke-width="2"/>`;
+  o += `<path d="M${x + 96} ${y - 70} h${w - 120}" stroke="#fff" stroke-width="4" opacity=".6"/>`;
+  o += `<ellipse cx="${x + 56}" cy="${y - 104}" rx="34" ry="18" fill="#fff" stroke="${LINE}" stroke-width="2"/>`;
+  if (mine) o += `<path transform="translate(${x + w / 2 + 30},${y - 82}) scale(1.3)" d="M0 6 c-6 -10 -20 -4 -14 6 l14 12 l14 -12 c6 -10 -8 -16 -14 -6 z" fill="#f28ab0" stroke="${LINE}" stroke-width="1.6"/>`;
+  return o + '</g>';
+}
+
+// =====================================================================  Szenen
+const FLOORS = [
+  { id: 0, name: 'Erdgeschoss', place: 'Entrée', sub: 'Eingang, Café, Théâtre' },
+  { id: 1, name: '1. Stock', place: '1. Stock', sub: 'Ballettsaal, Umkleiden' },
+  { id: 2, name: '2. Stock', place: '2. Stock · Mädchen', sub: 'Zimmer 1–5' },
+  { id: 3, name: '3. Stock', place: '3. Stock · Jungen', sub: 'Zimmer 6–10' },
+  { id: 4, name: 'Dach', place: 'Dachgeschoss', sub: 'Boutique, Büro, Dachterrasse' },
+];
+const ROOM_COLORS = { 1: '#fde2e4', 2: '#e6f0ea', 3: '#fff1df', 4: '#e3eefb', 5: '#efe4f7', 6: '#e3eefb', 7: '#e6f0ea', 8: '#fff1df', 9: '#fde2e4', 10: '#efe4f7' };
+const BED_COLORS = { 1: '#b9a2e6', 2: '#8fd3b6', 3: '#f6f0f4', 4: '#9ad1f5', 5: '#f6d26b', 6: '#7fa6e0', 7: '#5aa58a', 8: '#e0574f', 9: '#f2b84b', 10: '#c7a2f0' };
+
+function roomLabel(n) {
+  const rid = residentOf(n), names = [];
+  if (rid) names.push(CHARS[rid].name);
+  if (S.room === n) names.push(S.player.name);
+  return [`Zimmer ${n}`, names.length ? names.join(' & ') : 'frei'];
+}
+
+const SCENES = {};
+function corridor(fl) {
+  const doors = [];
+  let w = 2000, extra = '';
+  if (fl === 2 || fl === 3) {
+    const first = fl === 2 ? 1 : 6;
+    for (let i = 0; i < 5; i++) { const n = first + i; doors.push({ x: 560 + i * 320, label: roomLabel(n), act: `room:${n}`, mine: S.room === n }); }
+    w = 2160;
+    extra = poster(410, 200, 'Giselle', '#c7a2f0') + poster(1990, 200, 'Coppélia', '#8fd3b6');
+  } else if (fl === 1) {
+    doors.push({ x: 660, label: ['Ballettsaal', 'Madame Colletin'], act: 'scene:saal', double: true, w: 230 });
+    doors.push({ x: 1100, label: 'Umkleide ♀', act: 'scene:umkleide_w', color: '#d98aa6', dark: '#b96a88' });
+    doors.push({ x: 1420, label: 'Umkleide ♂', act: 'scene:umkleide_m', color: '#7f9ccf', dark: '#5f7cb0' });
+    w = 1700;
+    extra = poster(860, 220, 'Schwanensee', '#9ad1f5');
+  } else if (fl === 4) {
+    doors.push({ x: 700, label: ['Boutique', 'Kleider für Lob-Punkte'], act: 'scene:boutique', double: true, w: 220, color: '#d98aa6' });
+    doors.push({ x: 1150, label: ['Büro', 'der Direktorin'], act: 'scene:buero', color: '#6d5a8c', dark: '#54436f' });
+    doors.push({ x: 1560, label: ['Dachterrasse', 'Blick über Paris'], act: 'scene:terrasse', double: true, w: 220, color: '#8fbf9f', dark: '#6f9f7f' });
+    w = 1850;
+  }
+  let bg = wallBase(w, fl === 2 ? '#f9e4ea' : fl === 3 ? '#e4ebf6' : fl === 4 ? '#f6e6ef' : '#f3e8d8');
+  for (let x = 400; x < w; x += 640) bg += sconce(x + 160);
+  bg += extra + stairs(170, 'stairs');
+  bg += `<g><rect x="${w - 360}" y="70" width="300" height="56" rx="16" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="${w - 210}" y="107" text-anchor="middle" font-size="24" font-weight="800" fill="#7a3e5c">${FLOORS[fl].place}</text></g>`;
+  doors.forEach(d => { bg += door(d.x, d.label, d.act, d); });
+  return { w, bg, place: FLOORS[fl].place, floor: fl, npcs: [] };
+}
+function entree() {
+  const w = 2100;
+  let bg = wallBase(w, '#f3e8d8', '#e8d3b5', '#d8bf9c');
+  // Schachbrett-Marmor
+  for (let i = -10; i < 40; i++) bg += `<path d="M${i * 80} ${FLOOR_Y} l40 ${VH - FLOOR_Y} h40 l-40 -${VH - FLOOR_Y} z" fill="#fff" opacity=".45"/>`;
+  bg += stairs(170, 'stairs');
+  // Kronleuchter
+  bg += `<g><line x1="900" y1="0" x2="900" y2="80" stroke="#b8945c" stroke-width="4"/><path d="M820 100 q80 50 160 0" fill="none" stroke="#d9b36c" stroke-width="7"/>` +
+    [820, 860, 900, 940, 980].map((x, i) => `<circle cx="${x}" cy="${100 + [0, 18, 24, 18, 0][i]}" r="10" fill="#ffe7a0" stroke="${LINE}" stroke-width="2"/>`).join('') + `<circle cx="900" cy="120" r="120" fill="#fff3c4" opacity=".15"/></g>`;
+  // Haupteingang
+  bg += `<g data-act="exit" style="cursor:pointer"><path d="M420 ${FLOOR_Y} v-300 a90 90 0 0 1 180 0 v300 z" fill="#3f5f8f" stroke="${LINE}" stroke-width="3"/>` +
+    `<path d="M440 ${FLOOR_Y} v-290 a70 70 0 0 1 140 0 v290" fill="none" stroke="#6f8fbf" stroke-width="4"/><path d="M510 ${FLOOR_Y - 380} v380" stroke="${LINE}" stroke-width="3"/>` +
+    `<circle cx="495" cy="${FLOOR_Y - 150}" r="7" fill="#f6d26b"/><circle cx="525" cy="${FLOOR_Y - 150}" r="7" fill="#f6d26b"/>` +
+    `<rect x="430" y="${FLOOR_Y - 440}" width="160" height="40" rx="10" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="510" y="${FLOOR_Y - 413}" text-anchor="middle" font-size="18" font-weight="800" fill="#7a3e5c">Ausgang</text></g>`;
+  // Schild der Schule
+  bg += `<g><rect x="700" y="170" width="400" height="90" rx="18" fill="#fff8f0" stroke="#d9b36c" stroke-width="4"/><text x="900" y="212" text-anchor="middle" font-size="30" font-weight="800" fill="#c2456e" font-family="Fredoka, Nunito, sans-serif">École de Ballet Étoile</text><text x="900" y="244" text-anchor="middle" font-size="18" font-weight="700" fill="${LINE}">Paris · gegründet 1875</text></g>`;
+  // Sofa (eigene Zeichnung) + Schwarzes Brett
+  bg += `<image href="${SOFA_IMG}" x="700" y="${FLOOR_Y - 205}" width="330" height="211"/>`;
+  bg += `<g data-act="board" style="cursor:pointer"><rect x="1100" y="330" width="210" height="160" rx="8" fill="#c69c6d" stroke="${LINE}" stroke-width="3"/>` +
+    [['#fff', -3], ['#f7b6c8', 4], ['#ffe28a', 2], ['#bfe3f5', -4]].map(([c, r], i) => `<rect x="${1116 + (i % 2) * 96}" y="${346 + Math.floor(i / 2) * 70}" width="82" height="58" fill="${c}" transform="rotate(${r} ${1157 + (i % 2) * 96} ${375 + Math.floor(i / 2) * 70})"/>`).join('') +
+    `<rect x="1120" y="500" width="170" height="36" rx="10" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="1205" y="524" text-anchor="middle" font-size="17" font-weight="800" fill="#7a3e5c">Schwarzes Brett</text></g>`;
+  bg += door(1540, ['Café', 'Macarons & mehr'], 'scene:cafe', { color: '#d98aa6', dark: '#b96a88' });
+  bg += door(1860, ['Théâtre', 'Bühne'], 'scene:theater', { color: '#a8324a', dark: '#82243a', double: true, w: 200 });
+  return { w, bg, place: 'Entrée · Erdgeschoss', floor: 0, npcs: [] };
+}
+function roomScene(n) {
+  const w = 1420, rid = residentOf(n), mine = S.room === n;
+  let bg = wallBase(w, ROOM_COLORS[n], '#dcb68c', '#cba277');
+  bg += frenchWindow(605, 230, n <= 5 ? '#f7b6c8' : '#9fc3e6', `win${n}`);
+  bg += picture(280, 505, BED_COLORS[n]) + picture(990, 505, mine ? S.player.color : '#e8dfd2');
+  bg += `<ellipse cx="720" cy="${FLOOR_Y + 50}" rx="260" ry="32" fill="${BED_COLORS[n]}" opacity=".55" stroke="${LINE}" stroke-width="2"/>`;
+  // Betten: links = Bewohner(in), rechts = zweites Bett
+  bg += bedSVG(220, BED_COLORS[n], false, 230);
+  bg += bedSVG(930, mine ? S.player.color : '#f4ecf2', mine, 230);
+  for (const nx of [462, 868]) bg += `<rect x="${nx}" y="${FLOOR_Y - 90}" width="54" height="90" rx="6" fill="#e9c9a8" stroke="${LINE}" stroke-width="2"/><path d="M${nx + 27} ${FLOOR_Y - 90} v-40" stroke="${LINE}" stroke-width="3"/><path d="M${nx + 9} ${FLOOR_Y - 128} h36 l-6 -30 h-24 z" fill="#ffe7a0" stroke="${LINE}" stroke-width="2"/>`;
+  bg += `<g data-act="wardrobe" style="cursor:pointer"><rect x="1170" y="${FLOOR_Y - 290}" width="96" height="290" rx="8" fill="#e9c9a8" stroke="${LINE}" stroke-width="2"/><line x1="1218" y1="${FLOOR_Y - 280}" x2="1218" y2="${FLOOR_Y - 10}" stroke="${LINE}" stroke-width="2"/><circle cx="1208" cy="${FLOOR_Y - 150}" r="5" fill="${LINE}"/><circle cx="1228" cy="${FLOOR_Y - 150}" r="5" fill="${LINE}"/></g>`;
+  bg += door(95, ['Zum Gang'], `floor:${n <= 5 ? 2 : 3}`, { w: 120 });
+  bg += door(1345, ['Bad'], `bath:${n}`, { w: 100, color: '#9fc7d4', dark: '#7fa7b4', plate: '#eef8fb' });
+  const label = mine ? 'Dein Zimmer ♥' : `Zimmer ${n}`;
+  bg += `<g><rect x="530" y="40" width="380" height="58" rx="16" fill="#fff8f0" stroke="${mine ? '#c2456e' : '#d9b36c'}" stroke-width="3"/><text x="720" y="78" text-anchor="middle" font-size="26" font-weight="800" fill="#7a3e5c">${label}${rid ? ' · ' + CHARS[rid].name : ''}</text></g>`;
+  const away = rid && onTerrace().includes(rid);
+  const npcs = rid && !away ? [{ id: rid, x: 370 }] : [];
+  if (away) bg += `<g><rect x="190" y="${FLOOR_Y - 250}" width="280" height="64" rx="14" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="330" y="${FLOOR_Y - 223}" text-anchor="middle" font-size="17" font-weight="800" fill="#7a3e5c">${CHARS[rid].name} ist gerade</text><text x="330" y="${FLOOR_Y - 200}" text-anchor="middle" font-size="17" font-weight="800" fill="#7a3e5c">auf der Dachterrasse</text></g>`;
+  return { w, bg, place: `${label}${rid ? ' · ' + CHARS[rid].name : ''}`, floor: n <= 5 ? 2 : 3, npcs, room: n };
+}
+function bathScene(n) {
+  const w = 1200, curtain = n <= 5 ? '#f7b6c8' : '#8fbfe6';
+  let bg = `<rect x="-600" y="0" width="${w + 1200}" height="${VH}" fill="#e3f4f7"/>`;
+  for (let y = 120; y < FLOOR_Y; y += 60) bg += `<line x1="-600" y1="${y}" x2="${w + 600}" y2="${y}" stroke="#fff" stroke-width="3"/>`;
+  for (let x = -600; x < w + 600; x += 60) bg += `<line x1="${x}" y1="${FLOOR_Y - 340}" x2="${x}" y2="${FLOOR_Y}" stroke="#fff" stroke-width="3"/>`;
+  bg += `<rect x="-600" y="${FLOOR_Y}" width="${w + 1200}" height="${VH - FLOOR_Y}" fill="#bfdfe6"/>`;
+  // Toilette (Seitenansicht) mit Spülkasten und Klopapier
+  bg += `<g transform="translate(455,${FLOOR_Y}) scale(.62) translate(-455,${-FLOOR_Y})"><rect x="372" y="${FLOOR_Y - 250}" width="96" height="120" rx="12" fill="#fff" stroke="${LINE}" stroke-width="2"/><rect x="402" y="${FLOOR_Y - 268}" width="36" height="14" rx="5" fill="#dfe8ec" stroke="${LINE}" stroke-width="2"/>` +
+    `<path d="M380 ${FLOOR_Y - 130} h150 q12 0 12 12 q0 44 -50 58 l-6 60 h-70 l-6 -60 q-30 -14 -30 -58 q0 -12 0 -12 z" fill="#fff" stroke="${LINE}" stroke-width="2" stroke-linejoin="round"/>` +
+    `<path d="M380 ${FLOOR_Y - 140} h162 q8 0 8 8 v4 h-170 z" fill="#f4f8fa" stroke="${LINE}" stroke-width="2"/>` +
+    `<g><rect x="572" y="${FLOOR_Y - 200}" width="10" height="30" fill="#b8945c"/><circle cx="596" cy="${FLOOR_Y - 176}" r="20" fill="#fff" stroke="${LINE}" stroke-width="2"/><circle cx="596" cy="${FLOOR_Y - 176}" r="7" fill="#dfe8ec" stroke="${LINE}" stroke-width="1.5"/><path d="M596 ${FLOOR_Y - 156} v40 h-14 v-40" fill="#fff" stroke="${LINE}" stroke-width="1.5"/></g></g>`;
+  // Dusche
+  bg += `<g><rect x="680" y="${FLOOR_Y - 420}" width="200" height="420" fill="#fff" opacity=".4" stroke="#9fb7c4" stroke-width="3"/><path d="M740 ${FLOOR_Y - 420} q40 0 40 30" fill="none" stroke="#9aa" stroke-width="7"/><circle cx="780" cy="${FLOOR_Y - 384}" r="16" fill="#cfe1e8" stroke="#9aa" stroke-width="3"/>` +
+    `<path d="M670 ${FLOOR_Y - 430} q30 120 0 230 q30 120 0 200 h40 q-20 -200 0 -430 z" fill="${curtain}" stroke="${LINE}" stroke-width="2"/></g>`;
+  // Waschbecken mit Spiegel
+  bg += `<g><rect x="975" y="${FLOOR_Y - 360}" width="120" height="150" rx="20" fill="#dceefb" stroke="#d9b36c" stroke-width="5"/><path d="M955 ${FLOOR_Y - 180} h160 q0 50 -80 50 q-80 0 -80 -50 z" fill="#fff" stroke="${LINE}" stroke-width="2"/><rect x="1023" y="${FLOOR_Y - 132}" width="24" height="132" fill="#fff" stroke="${LINE}" stroke-width="2"/></g>`;
+  // Regal mit Shampoo
+  bg += `<g>${[0, 1, 2].map(i => `<rect x="${394 + i * 26}" y="${FLOOR_Y - 300}" width="18" height="40" rx="6" fill="${(n <= 5 ? ['#f59ab8', '#9ad1f5', '#f6d26b'] : ['#7fa6e0', '#8fd3b6', '#f6d26b'])[i]}" stroke="${LINE}" stroke-width="1.5"/>`).join('')}<rect x="374" y="${FLOOR_Y - 260}" width="100" height="10" rx="4" fill="#fff" stroke="${LINE}" stroke-width="1.5"/></g>`;
+  bg += door(140, ['Zurück'], `room:${n}`, { w: 120 });
+  return { w, bg, place: `Bad · Zimmer ${n}`, floor: n <= 5 ? 2 : 3, npcs: [] };
+}
+function saal() {
+  const w = 2000;
+  let bg = wallBase(w, '#fdf0d8', '#d9a06a', '#c98f5b');
+  for (let i = 0; i < 7; i++) bg += `<rect x="${360 + i * 230}" y="140" width="214" height="${FLOOR_Y - 300}" fill="url(#mirrorG)" stroke="#e6cf9e" stroke-width="5"/>`;
+  bg += `<path d="M330 ${FLOOR_Y - 230} H${w - 120}" stroke="#a87449" stroke-width="12" stroke-linecap="round"/>`;
+  for (const x of [380, 900, 1420, w - 160]) bg += `<path d="M${x} ${FLOOR_Y - 230} V${FLOOR_Y}" stroke="#a87449" stroke-width="7"/>`;
+  bg += `<g><rect x="1690" y="${FLOOR_Y - 150}" width="200" height="120" rx="8" fill="#3b2f3a" stroke="${LINE}" stroke-width="2"/><rect x="1690" y="${FLOOR_Y - 168}" width="200" height="22" fill="#4b3d4a"/><rect x="1700" y="${FLOOR_Y - 128}" width="180" height="20" fill="#fff"/>` +
+    Array.from({ length: 12 }, (_, i) => `<rect x="${1708 + i * 15}" y="${FLOOR_Y - 128}" width="7" height="12" fill="#222"/>`).join('') + `<rect x="1700" y="${FLOOR_Y - 30}" width="14" height="30" fill="#3b2f3a"/><rect x="1866" y="${FLOOR_Y - 30}" width="14" height="30" fill="#3b2f3a"/></g>`;
+  bg += door(100, ['Zum Gang'], 'floor:1', { w: 130 });
+  bg += `<g><rect x="760" y="40" width="480" height="62" rx="18" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="1000" y="81" text-anchor="middle" font-size="28" font-weight="800" fill="#7a3e5c">Großer Ballettsaal</text></g>`;
+  return { w, bg, place: 'Großer Ballettsaal', floor: 1, npcs: [{ id: 'colletin', x: 1250 }] };
+}
+function simpleRoom(key) {
+  const R = {
+    cafe: { t: 'Café', wall: '#fbeef2', floor: 0, sign: 'Hier könnt ihr bald Macarons selbst gestalten!' },
+    theater: { t: 'Théâtre', wall: '#3d2b4f', floor: 0, sign: 'Hier finden bald die Aufführungen statt!' },
+    umkleide_w: { t: 'Umkleide ♀', wall: '#f8e3ec', floor: 1, sign: 'Hier ziehst du bald dein Trainingsoutfit an.' },
+    umkleide_m: { t: 'Umkleide ♂', wall: '#e4ebf6', floor: 1, sign: 'Hier ziehst du bald dein Trainingsoutfit an.' },
+    boutique: { t: 'Boutique', wall: '#fbe3ef', floor: 4, sign: 'Bald kannst du hier Kleider mit Lob-Punkten kaufen.' },
+    buero: { t: 'Büro der Direktorin', wall: '#efe6dc', floor: 4, sign: 'Hier gibt es bald Prüfungen und Zeugnisse.' },
+  }[key];
+  const w = 1600;
+  let bg = wallBase(w, R.wall);
+  if (key === 'cafe') {
+    bg += `<path d="M300 60 h1100 v50 ${Array.from({ length: 11 }, () => 'q-50 40 -100 0').join(' ')} z" fill="#f59ab8" opacity=".75"/>`;
+    bg += `<rect x="1050" y="${FLOOR_Y - 170}" width="440" height="170" rx="12" fill="#f3d3b5" stroke="${LINE}" stroke-width="2"/><rect x="1070" y="${FLOOR_Y - 260}" width="400" height="90" rx="10" fill="#eaf6fb" stroke="${LINE}" stroke-width="2" opacity=".95"/>`;
+    const mc = ['#f59ab8', '#9ad1f5', '#f6d26b', '#8fd3b6', '#c7a2f0', '#ff8c7a'];
+    for (let i = 0; i < 12; i++) { const mx = 1110 + (i % 6) * 64, my = FLOOR_Y - 240 + Math.floor(i / 6) * 40, c = mc[i % 6];
+      bg += `<ellipse cx="${mx}" cy="${my}" rx="22" ry="9" fill="${c}" stroke="${LINE}" stroke-width="1.5"/><rect x="${mx - 20}" y="${my + 5}" width="40" height="6" fill="#fff"/><ellipse cx="${mx}" cy="${my + 16}" rx="22" ry="9" fill="${c}" stroke="${LINE}" stroke-width="1.5"/>`; }
+    for (const tx of [520, 820]) bg += `<ellipse cx="${tx}" cy="${FLOOR_Y - 110}" rx="90" ry="14" fill="#c99b74" stroke="${LINE}" stroke-width="2"/><rect x="${tx - 8}" y="${FLOOR_Y - 110}" width="16" height="110" fill="#b98a63"/>`;
+  }
+  if (key === 'theater') {
+    bg += `<rect x="-600" y="0" width="${w + 1200}" height="${VH}" fill="#2f2240"/><rect x="200" y="80" width="1200" height="${FLOOR_Y - 140}" fill="#3d2b4f"/>`;
+    bg += `<path d="M200 80 H1400 V170 Q800 230 200 170 z" fill="#c8324a"/><path d="M200 80 h170 q-40 300 60 ${FLOOR_Y - 140} h-230 z" fill="url(#curtainG)"/><path d="M1400 80 h-170 q40 300 -60 ${FLOOR_Y - 140} h230 z" fill="url(#curtainG)"/>`;
+    bg += `<rect x="-600" y="${FLOOR_Y - 60}" width="${w + 1200}" height="${VH}" fill="#b5835a"/><path d="M500 80 L380 ${FLOOR_Y - 60} H760 z" fill="#fff6c9" opacity=".15"/><path d="M1100 80 L840 ${FLOOR_Y - 60} H1220 z" fill="#fff6c9" opacity=".15"/>`;
+  }
+  if (key.startsWith('umkleide')) {
+    const c = key.endsWith('w') ? '#f2b8cc' : '#b9c8e8';
+    for (let i = 0; i < 8; i++) bg += `<rect x="${330 + i * 120}" y="${FLOOR_Y - 330}" width="110" height="330" rx="8" fill="${c}" stroke="${LINE}" stroke-width="2"/><rect x="${370 + i * 120}" y="${FLOOR_Y - 300}" width="30" height="8" rx="4" fill="${LINE}"/>`;
+    bg += `<rect x="420" y="${FLOOR_Y - 80}" width="760" height="22" rx="8" fill="#b98a63" stroke="${LINE}" stroke-width="2"/>`;
+  }
+  if (key === 'boutique') {
+    for (const rx of [300, 760]) {
+      bg += `<path d="M${rx} ${FLOOR_Y - 330} H${rx + 380} M${rx + 10} ${FLOOR_Y - 330} V${FLOOR_Y} M${rx + 370} ${FLOOR_Y - 330} V${FLOOR_Y}" stroke="#b39070" stroke-width="10"/>`;
+      ['#f59ab8', '#9ad1f5', '#f6d26b', '#c7a2f0'].forEach((c, i) => {
+        const dx = rx + 60 + i * 86;
+        bg += `<path d="M${dx} ${FLOOR_Y - 330} v20" stroke="#998" stroke-width="3"/><path d="M${dx - 18} ${FLOOR_Y - 310} q18 12 36 0 v50 h-36 z" fill="${c}" stroke="${LINE}" stroke-width="2"/><path d="M${dx - 20} ${FLOOR_Y - 262} q-36 10 -42 56 q20 12 42 4 q20 8 42 0 q22 8 42 -4 q-6 -46 -42 -56 z" fill="${c}" stroke="${LINE}" stroke-width="2"/>`;
+      });
+    }
+    bg += `<g><rect x="1230" y="${FLOOR_Y - 400}" width="250" height="300" rx="20" fill="#fff8f0" stroke="#d9b36c" stroke-width="5"/><image href="${KLEID_IMG}" x="1245" y="${FLOOR_Y - 380}" width="220" height="193"/><text x="1355" y="${FLOOR_Y - 150}" text-anchor="middle" font-size="18" font-weight="800" fill="#7a3e5c">Tutu „Rose"</text><text x="1355" y="${FLOOR_Y - 124}" text-anchor="middle" font-size="18" font-weight="800" fill="${LINE}">★ 5 Lob-Punkte</text></g>`;
+  }
+  if (key === 'buero') {
+    bg += frenchWindow(695, 230, '#c7a2f0', 'winbuero');
+    bg += `<rect x="560" y="${FLOOR_Y - 130}" width="520" height="26" rx="6" fill="#b98a63" stroke="${LINE}" stroke-width="2"/><rect x="580" y="${FLOOR_Y - 104}" width="20" height="104" fill="#b98a63"/><rect x="1040" y="${FLOOR_Y - 104}" width="20" height="104" fill="#b98a63"/>`;
+    bg += star(820, FLOOR_Y - 165, 26);
+    bg += `<rect x="1200" y="${FLOOR_Y - 380}" width="220" height="380" fill="#c99b74" stroke="${LINE}" stroke-width="2"/>` +
+      Array.from({ length: 12 }, (_, i) => `<rect x="${1214 + (i % 6) * 34}" y="${FLOOR_Y - 366 + Math.floor(i / 6) * 120}" width="26" height="100" fill="${['#e77', '#7ae', '#ec6', '#8c8', '#c7a2f0', '#f59ab8'][i % 6]}" stroke="${LINE}" stroke-width="1"/>`).join('');
+  }
+  const signFill = key === 'theater' ? '#fff8f0' : '#fff8f0';
+  bg += `<g><rect x="520" y="${key === 'theater' ? 250 : 120}" width="560" height="92" rx="20" fill="${signFill}" stroke="#c2456e" stroke-width="3" stroke-dasharray="10 7"/><text x="800" y="${key === 'theater' ? 288 : 158}" text-anchor="middle" font-size="27" font-weight="800" fill="#c2456e">${R.t}</text><text x="800" y="${key === 'theater' ? 322 : 192}" text-anchor="middle" font-size="18" font-weight="700" fill="${LINE}">${R.sign}</text></g>`;
+  bg += door(100, ['Zurück'], `floor:${R.floor}`, { w: 130 });
+  return { w, bg, place: R.t, floor: R.floor, npcs: [] };
+}
+function terrace() {
+  const w = 1900, ph = phase(), c = SKYCOL[ph], night = ph === 'nacht' || ph === 'abend';
+  let bg = `<rect x="-600" y="0" width="${w + 1200}" height="${VH}" fill="url(#sky_${ph})"/>`;
+  bg += skyExtras(-600, 0, w + 1200, 900, ph);
+  // Stadt: ferne Häuserreihe
+  const hz = 640;
+  for (let i = -6; i < 40; i++) {
+    const bx = i * 70, bh = 70 + ((i * 47) % 9) * 14;
+    bg += `<rect x="${bx}" y="${hz - bh}" width="66" height="${bh + 40}" fill="${c.roofs[(i + 9) % 3]}"/><path d="M${bx - 4} ${hz - bh} h74 l-10 -18 h-54 z" fill="${c.roofs[(i + 10) % 3]}"/>`;
+    for (let k = 0; k < 3; k++) bg += `<rect x="${bx + 10 + k * 18}" y="${hz - bh + 16}" width="9" height="13" fill="${c.lit}" opacity="${c.litOp * (((i + k) % 3) ? 1 : .4)}"/>`;
+  }
+  const lm = night ? c.tower : '#f2ece4', lmLine = c.towerLine;
+  // Sacré-Cœur
+  bg += `<g data-act="sight:sacre" style="cursor:pointer" fill="${ph === 'nacht' ? '#cfc8dc' : '#f7f3ec'}" stroke="${lmLine}" stroke-width="2"><rect x="160" y="${hz - 190}" width="200" height="120"/><path d="M200 ${hz - 190} q60 -110 120 0 z"/><rect x="254" y="${hz - 330}" width="12" height="40"/><path d="M168 ${hz - 160} q22 -50 44 0 z M308 ${hz - 160} q22 -50 44 0 z"/><path d="M256 ${hz - 290} q4 -20 8 0" /></g>`;
+  // Opéra Garnier
+  bg += `<g data-act="sight:opera" style="cursor:pointer" stroke="${lmLine}" stroke-width="2"><rect x="540" y="${hz - 150}" width="230" height="110" fill="${ph === 'nacht' ? '#a8987a' : '#e7d5a8'}"/><path d="M590 ${hz - 150} q65 -70 130 0 z" fill="${ph === 'nacht' ? '#4f7a6a' : '#7fb5a0'}"/><circle cx="655" cy="${hz - 196}" r="9" fill="#f6c64b"/>` +
+    [0, 1, 2, 3, 4].map(k => `<rect x="${556 + k * 44}" y="${hz - 120}" width="18" height="60" rx="8" fill="${c.lit}" opacity="${night ? .9 : .5}"/>`).join('') + `</g>`;
+  // Arc de Triomphe
+  bg += `<g data-act="sight:arc" style="cursor:pointer" fill="${ph === 'nacht' ? '#9a92ad' : '#eadfce'}" stroke="${lmLine}" stroke-width="2"><path d="M920 ${hz - 40} v-150 h170 v150 h-50 v-70 q-35 -50 -70 0 v70 z"/><rect x="910" y="${hz - 205}" width="190" height="22"/></g>`;
+  // Eiffelturm, groß
+  bg += `<g data-act="sight:eiffel" style="cursor:pointer">${eiffelTower(1380, hz + 10, 1.25, ph)}<rect x="1260" y="${hz - 540}" width="240" height="540" fill="transparent"/></g>`;
+  // Notre-Dame
+  bg += `<g data-act="sight:notre" style="cursor:pointer" fill="${ph === 'nacht' ? '#8f87a3' : '#ddd2bf'}" stroke="${lmLine}" stroke-width="2"><rect x="1660" y="${hz - 220}" width="60" height="180"/><rect x="1780" y="${hz - 220}" width="60" height="180"/><rect x="1720" y="${hz - 160}" width="60" height="120"/><circle cx="1750" cy="${hz - 120}" r="18" fill="${c.lit}" opacity=".8"/><path d="M1745 ${hz - 160} l5 -80 l5 80 z"/></g>`;
+  // Terrassenboden (Holzdeck)
+  bg += `<rect x="-600" y="${FLOOR_Y - 60}" width="${w + 1200}" height="${VH}" fill="#c99f74"/>`;
+  for (let x = -600; x < w + 600; x += 90) bg += `<line x1="${x}" y1="${FLOOR_Y - 60}" x2="${x - 30}" y2="${VH}" stroke="#b58a60" stroke-width="3"/>`;
+  bg += `<rect x="-600" y="${FLOOR_Y - 60}" width="${w + 1200}" height="8" fill="#000" opacity=".1"/>`;
+  // schmiedeeisernes Geländer
+  let rail = `<path d="M-600 ${FLOOR_Y - 190} H${w + 600}" stroke="#3d3f52" stroke-width="8"/><path d="M-600 ${FLOOR_Y - 70} H${w + 600}" stroke="#3d3f52" stroke-width="6"/>`;
+  for (let x = -580; x < w + 600; x += 40) rail += `<path d="M${x} ${FLOOR_Y - 190} V${FLOOR_Y - 70}" stroke="#3d3f52" stroke-width="3"/>`;
+  for (let x = -560; x < w + 600; x += 160) rail += `<path d="M${x} ${FLOOR_Y - 130} q20 -30 40 0 q20 30 40 0" fill="none" stroke="#3d3f52" stroke-width="3"/>`;
+  bg += rail;
+  // Lichterkette
+  let lights = `<path d="M-100 120 Q400 220 900 130 T1900 140" fill="none" stroke="#5b3d4a" stroke-width="2"/>`;
+  for (let i = 0; i < 24; i++) { const t = i / 23, lx = -100 + t * 2000, ly = 140 + Math.sin(t * Math.PI * 2) * 40 + 30;
+    const lc = ['#ffd77a', '#f7a8c4', '#bfe3f5'][i % 3];
+    lights += (night ? `<circle cx="${lx}" cy="${ly}" r="18" fill="${lc}" opacity=".35"/>` : '') + `<circle cx="${lx}" cy="${ly}" r="8" fill="${lc}" stroke="#5b3d4a" stroke-width="1.5"/>`; }
+  bg += lights;
+  // Pflanzen, Bank, Tisch
+  for (const px of [330, 1150, 1760]) bg += `<g><path d="M${px - 50} ${FLOOR_Y} l10 -70 h80 l10 70 z" fill="#d98b5f" stroke="${LINE}" stroke-width="2"/><circle cx="${px - 20}" cy="${FLOOR_Y - 96}" r="34" fill="#7fb77e"/><circle cx="${px + 22}" cy="${FLOOR_Y - 102}" r="30" fill="#93cb8a"/><circle cx="${px}" cy="${FLOOR_Y - 130}" r="28" fill="#86c17f"/>` +
+    [0, 1, 2, 3].map(k => `<circle cx="${px - 30 + k * 20}" cy="${FLOOR_Y - 110 - (k % 2) * 26}" r="7" fill="${['#f28ab0', '#f6d26b', '#f7a8c4', '#fff'][k]}"/>`).join('') + `</g>`;
+  bg += `<g><rect x="520" y="${FLOOR_Y - 110}" width="300" height="22" rx="8" fill="#b98a63" stroke="${LINE}" stroke-width="2"/><rect x="520" y="${FLOOR_Y - 190}" width="300" height="18" rx="8" fill="#b98a63" stroke="${LINE}" stroke-width="2"/><rect x="530" y="${FLOOR_Y - 172}" width="12" height="62" fill="#b98a63"/><rect x="798" y="${FLOOR_Y - 172}" width="12" height="62" fill="#b98a63"/><path d="M540 ${FLOOR_Y - 88} v88 M800 ${FLOOR_Y - 88} v88" stroke="#3d3f52" stroke-width="8"/></g>`;
+  bg += `<g><ellipse cx="1500" cy="${FLOOR_Y - 120}" rx="70" ry="12" fill="#3d3f52"/><path d="M1500 ${FLOOR_Y - 120} v120 M1470 ${FLOOR_Y} h60" stroke="#3d3f52" stroke-width="7"/><rect x="1480" y="${FLOOR_Y - 150}" width="18" height="28" rx="4" fill="#fff" stroke="${LINE}" stroke-width="1.5"/><ellipse cx="1528" cy="${FLOOR_Y - 128}" rx="16" ry="6" fill="#f59ab8" stroke="${LINE}" stroke-width="1.2"/></g>`;
+  // Fernrohr
+  bg += `<g data-act="telescope" style="cursor:pointer"><path d="M1000 ${FLOOR_Y} l30 -120 l30 120 M1030 ${FLOOR_Y - 120} v120" stroke="#3d3f52" stroke-width="7" fill="none"/><g transform="rotate(-22 1030 ${FLOOR_Y - 130})"><rect x="980" y="${FLOOR_Y - 150}" width="120" height="34" rx="10" fill="#d9b36c" stroke="${LINE}" stroke-width="2"/><rect x="1094" y="${FLOOR_Y - 156}" width="22" height="46" rx="6" fill="#b8945c" stroke="${LINE}" stroke-width="2"/></g>` +
+    `<rect x="955" y="${FLOOR_Y - 270}" width="150" height="40" rx="12" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="1030" y="${FLOOR_Y - 243}" text-anchor="middle" font-size="18" font-weight="800" fill="#7a3e5c">Fernrohr</text></g>`;
+  bg += door(100, ['Zurück ins Haus'], 'floor:4', { w: 130, color: '#8fbf9f', dark: '#6f9f7f' });
+  bg += `<g><rect x="760" y="30" width="380" height="58" rx="16" fill="#fff8f0" stroke="#d9b36c" stroke-width="3"/><text x="950" y="68" text-anchor="middle" font-size="26" font-weight="800" fill="#7a3e5c">Dachterrasse · ${PHASES[ph]}</text></g>`;
+  const spots = [700, 1240, 1660];
+  return { w, bg, place: 'Dachterrasse', floor: 4, npcs: onTerrace().map((id, i) => ({ id, x: spots[i] })), floorOffset: -60 };
+}
+const SIGHTS = {
+  eiffel: ['Der Eiffelturm', 'Er ist 330 Meter hoch und wurde 1889 gebaut. Abends glitzert er zu jeder vollen Stunde fünf Minuten lang.'],
+  sacre: ['Sacré-Cœur', 'Die weiße Kirche steht oben auf dem Hügel Montmartre. Dort malen viele Künstler.'],
+  opera: ['Opéra Garnier', 'Das berühmte Opernhaus von Paris. Hier tanzt das Pariser Opernballett, und die Ballettschüler heißen „Petits Rats".'],
+  arc: ['Arc de Triomphe', 'Ein riesiger Torbogen am Ende der Prachtstraße Champs-Élysées.'],
+  notre: ['Notre-Dame', 'Eine sehr alte, berühmte Kirche auf einer Insel im Fluss Seine.'],
+};
+function sightPanel(key) {
+  const [t, d] = SIGHTS[key];
+  openModal(`<h2>${t}</h2><p>${d}</p><div class="row"><button class="btn primary" id="mClose">Schön!</button></div>`);
+  speak(t + '. ' + d);
+  $('mClose').onclick = () => { stopSpeak(); closeModal(); };
+}
+function telescopePanel() {
+  let h = `<h2>Was siehst du durchs Fernrohr?</h2>`;
+  for (const k of Object.keys(SIGHTS)) h += `<button class="btn" data-sight="${k}">${SIGHTS[k][0]}</button>`;
+  h += `<div class="row"><button class="btn" id="mClose">Fertig</button></div>`;
+  openModal(h);
+  $('mClose').onclick = closeModal;
+  document.querySelectorAll('[data-sight]').forEach(b => b.onclick = () => sightPanel(b.dataset.sight));
+}
+function buildScene(id) {
+  if (id === 'terrasse') return terrace();
+  if (id === 'floor0') return entree();
+  if (id.startsWith('floor')) return corridor(+id.slice(5));
+  if (id.startsWith('room')) return roomScene(+id.slice(4));
+  if (id.startsWith('bath')) return bathScene(+id.slice(4));
+  if (id === 'saal') return saal();
+  return simpleRoom(id);
+}
+
+// =====================================================================  Darstellung & Kamera
+const $ = id => document.getElementById(id);
+const svg = $('stage'), sceneG = $('scene'), actorsG = $('actors'), camG = $('cam');
+$('defs').innerHTML = `
+  <linearGradient id="sky_morgen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8c8ee"/><stop offset=".55" stop-color="#f7c6d6"/><stop offset="1" stop-color="#ffd9a8"/></linearGradient>
+  <linearGradient id="sky_tag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fbbe9"/><stop offset=".75" stop-color="#bfe0f7"/><stop offset="1" stop-color="#e6f3fb"/></linearGradient>
+  <linearGradient id="sky_abend" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a4a8a"/><stop offset=".5" stop-color="#d9719a"/><stop offset="1" stop-color="#ffb070"/></linearGradient>
+  <linearGradient id="sky_nacht" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141a3a"/><stop offset=".7" stop-color="#27305e"/><stop offset="1" stop-color="#3b3f73"/></linearGradient>
+  <linearGradient id="mirrorG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6f3fb"/><stop offset=".45" stop-color="#c9e2f2"/><stop offset=".5" stop-color="#f4fbff"/><stop offset="1" stop-color="#bcd8ec"/></linearGradient>
+  <linearGradient id="curtainG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a51f37"/><stop offset=".3" stop-color="#d9405a"/><stop offset=".6" stop-color="#b52640"/><stop offset="1" stop-color="#d9405a"/></linearGradient>`;
+
+let cur = null;          // aktuelle Szene
+let VW = 1600;           // sichtbare Breite in Weltkoordinaten
+const player = { x: 500, tx: 500, moving: false, walkT: 0, onArrive: null, el: null };
+const npcEls = [];
+
+function resize() {
+  const a = innerWidth / innerHeight;
+  VW = Math.max(1100, Math.min(2200, VH * a));
+  svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+  updateCamera();
+}
+function updateCamera() {
+  if (!cur) return;
+  let cx;
+  if (cur.w <= VW) cx = (cur.w - VW) / 2;
+  else cx = Math.max(0, Math.min(cur.w - VW, player.x - VW / 2));
+  camG.setAttribute('transform', `translate(${-cx},0)`);
+  cur.camX = cx;
+}
+function playerLook() {
+  const p = S.player;
+  return { kind: p.kind, skin: p.skin, hair: p.hair, hairStyle: p.hairStyle, eyes: p.eyes, color: p.color, tutu: p.tutu, expr: 'froh', arms: ['unten', 'unten'] };
+}
+function enterScene(id, x) {
+  cur = buildScene(id);
+  S.scene = id;
+  sceneG.innerHTML = cur.bg;
+  actorsG.innerHTML = '';
+  npcEls.length = 0;
+  for (const n of cur.npcs) {
+    const c = CHARS[n.id], s = c.look.height || 1;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('data-act', `talk:${n.id}`);
+    g.style.cursor = 'pointer';
+    g.innerHTML = `<g transform="translate(${n.x},${FLOOR_Y + (cur.floorOffset || 0)}) scale(${s})"><g class="breathe">${figureSVG(c.look)}</g><rect x="-70" y="-310" width="140" height="320" fill="transparent"/></g>`;
+    if (!S.met.includes(n.id) && n.id !== 'colletin' || (n.id === 'colletin' && !S.greetedTeacher)) {
+      g.innerHTML += `<g transform="translate(${n.x + 50},${FLOOR_Y + (cur.floorOffset || 0) - 330 * s})"><circle r="22" fill="#fff8f0" stroke="#c2456e" stroke-width="3"/><text y="9" text-anchor="middle" font-size="26" font-weight="800" fill="#c2456e">!</text></g>`;
+    }
+    actorsG.appendChild(g);
+    npcEls.push({ id: n.id, x: n.x, el: g });
+  }
+  player.el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  player.el.innerHTML = `<g class="pbody">${figureSVG(playerLook())}</g>`;
+  actorsG.appendChild(player.el);
+  player.x = player.tx = Math.max(120, Math.min(cur.w - 120, x ?? 300));
+  player.moving = false;
+  placePlayer();
+  updateCamera();
+  $('place').textContent = cur.place;
+  $('movein').hidden = !(cur.room && S.room == null && canLiveIn(cur.room));
+  updateTask();
+  save();
+}
+function placePlayer() {
+  const bob = player.moving ? Math.abs(Math.sin(player.walkT * 9)) * -10 : 0;
+  const tilt = player.moving ? Math.sin(player.walkT * 9) * 3 : 0;
+  player.el.setAttribute('transform', `translate(${player.x},${FLOOR_Y + (cur.floorOffset || 0) + bob}) rotate(${tilt})`);
+}
+function transition(fn) {
+  const f = $('fade');
+  f.classList.add('on');
+  setTimeout(() => { fn(); requestAnimationFrame(() => f.classList.remove('on')); }, 260);
+}
+
+// =====================================================================  Bewegung
+let last = performance.now();
+function tick(t) {
+  const dt = Math.min(0.05, (t - last) / 1000); last = t;
+  if (player.moving) {
+    const d = player.tx - player.x, step = 520 * dt;
+    if (Math.abs(d) <= step) { player.x = player.tx; player.moving = false; placePlayer(); updateCamera(); const cb = player.onArrive; player.onArrive = null; cb && cb(); }
+    else { player.x += Math.sign(d) * step; player.walkT += dt; placePlayer(); updateCamera(); }
+  }
+  requestAnimationFrame(tick);
+}
+function walkTo(x, cb) {
+  player.tx = Math.max(110, Math.min(cur.w - 110, x));
+  player.onArrive = cb || null;
+  player.moving = player.tx !== player.x;
+  if (!player.moving && cb) { player.onArrive = null; cb(); }
+}
+
+// =====================================================================  Antippen
+function toWorld(ev) {
+  const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return { x: p.x + (cur.camX || 0), y: p.y };
+}
+svg.addEventListener('pointerdown', ev => {
+  if (!cur || !$('dialog').hidden || !$('modal').hidden) return;
+  const w = toWorld(ev);
+  const hit = ev.target.closest('[data-act]');
+  if (hit) return act(hit.getAttribute('data-act'), w.x);
+  walkTo(w.x);
+});
+function act(a, wx) {
+  const [kind, arg] = a.split(':');
+  if (kind === 'talk') { const n = npcEls.find(e => e.id === arg); const side = player.x < n.x ? -1 : 1; return walkTo(n.x + side * 140, () => startTalk(arg)); }
+  if (kind === 'stairs') return walkTo(170, stairMenu);
+  if (kind === 'room') { const target = `room${arg}`; const back = S.scene.startsWith('bath'); return walkTo(back ? 140 : wx, () => transition(() => enterScene(target, back ? 1230 : 220))); }
+  if (kind === 'bath') return walkTo(1345, () => transition(() => enterScene(`bath${arg}`, 260)));
+  if (kind === 'floor') {
+    const fl = +arg, from = S.scene;
+    let x = 400;
+    if (from.startsWith('room')) { const n = +from.slice(4); x = 560 + ((n - 1) % 5) * 320; }
+    if (from === 'saal') x = 660; if (from === 'umkleide_w') x = 1100; if (from === 'umkleide_m') x = 1420;
+    if (from === 'boutique') x = 700; if (from === 'buero') x = 1150; if (from === 'terrasse') x = 1560; if (from === 'cafe') x = 1540; if (from === 'theater') x = 1860;
+    return walkTo(100, () => transition(() => enterScene(`floor${fl}`, x)));
+  }
+  if (kind === 'scene') return walkTo(wx, () => transition(() => enterScene(arg, 240)));
+  if (kind === 'exit') return walkTo(510, () => toast('Paris erkunden kommt später. Erst einmal: Willkommen in der Schule!'));
+  if (kind === 'board') return walkTo(1205, boardPanel);
+  if (kind === 'telescope') return walkTo(1030, telescopePanel);
+  if (kind === 'sight') return sightPanel(arg);
+  if (kind === 'wardrobe') return walkTo(1218, () => toast(S.room === cur.room ? 'Hier kannst du dich bald umziehen!' : 'Das ist nicht dein Schrank.'));
+}
+
+// =====================================================================  Treppe, Brett, Einziehen
+function openModal(html) { $('modalPanel').innerHTML = html; $('modal').hidden = false; }
+function closeModal() { $('modal').hidden = true; }
+$('modal').addEventListener('pointerdown', e => { if (e.target === $('modal')) closeModal(); });
+function stairMenu() {
+  const here = cur.floor;
+  let h = `<h2>Wohin möchtest du?</h2>`;
+  for (const f of [...FLOORS].reverse()) h += `<button class="btn floorbtn ${f.id === here ? 'here' : ''}" data-fl="${f.id}"><span>${f.name}</span><small>${f.sub}${f.id === here ? ' · du bist hier' : ''}</small></button>`;
+  h += `<div class="row"><button class="btn" id="mClose">Hierbleiben</button></div>`;
+  openModal(h);
+  $('mClose').onclick = closeModal;
+  document.querySelectorAll('[data-fl]').forEach(b => b.onclick = () => {
+    const fl = +b.dataset.fl; closeModal();
+    if (fl === here) return;
+    transition(() => enterScene(`floor${fl}`, 330));
+  });
+}
+function boardPanel() {
+  openModal(`<h2>Schwarzes Brett</h2>
+    <p>📌 Willkommen an der École de Ballet Étoile!</p>
+    <p>🩰 Unterricht bei Madame Colletin im Ballettsaal, 1. Stock</p>
+    <p>🎭 Bald: erste Aufführung „Der Nussknacker" im Théâtre</p>
+    <p>🍪 Café: Macaron-Werkstatt kommt bald!</p>
+    <div class="row"><button class="btn primary" id="mClose">Alles klar!</button></div>`);
+  $('mClose').onclick = closeModal;
+}
+function canLiveIn(n) { return W() ? n <= 5 : n >= 6; }
+$('movein').addEventListener('click', () => {
+  const n = cur.room, rid = residentOf(n);
+  openModal(`<h2>Hier einziehen?</h2><p>Möchtest du in <b>Zimmer ${n}</b> wohnen${rid ? ` – zusammen mit <b>${CHARS[rid].name}</b>` : ' – erst einmal allein'}?</p>
+    <div class="row"><button class="btn" id="mNo">Noch nicht</button><button class="btn primary" id="mYes">Ja, hier wohne ich!</button></div>`);
+  $('mNo').onclick = closeModal;
+  $('mYes').onclick = () => {
+    closeModal(); S.room = n; save();
+    enterScene(`room${n}`, player.x);
+    sparkle();
+    if (rid) startTalk(rid, 'movein'); else toast('Zimmer ' + n + ' ist jetzt dein Zimmer ♥');
+  };
+});
+
+// =====================================================================  Gespräche
+const T = id => CHARS[id].name;
+function dialogs(id) {
+  const n = S.player.name, du = W() ? 'die Neue' : 'der Neue';
+  const D = {
+    elisabeth: {
+      start: { say: `Hallo! Ich bin Elisabeth. Bist du ${du}?`, ch: [['Ja, ich bin gerade angekommen!', 'a'], ['Hallo, ich heiße ' + n + '!', 'a']] },
+      a: { say: `Willkommen, ${n}! Wenn du Hilfe brauchst, frag mich einfach. Ich zeig dir gern die Positionen.`, ch: [['Danke, das ist lieb!', 'end'], ['Was sind Positionen?', 'b']] },
+      b: { say: 'Im Ballett gibt es fünf Grundpositionen für die Füße. Madame Colletin fragt die ganz bestimmt ab!', ch: [['Dann übe ich die!', 'end']] },
+    },
+    johanna: {
+      start: { say: `Hey! Ich bin Johanna. Willst du mal reinhören? Das ist gerade mein Lieblingslied.`, ch: [['Klar!', 'a'], ['Was hörst du denn?', 'b']] },
+      a: { say: 'Cool, oder? Beim Tanzen hab ich immer Musik im Kopf. Dann geht alles wie von selbst.', ch: [['Das geht mir auch so!', 'end']] },
+      b: { say: 'Tschaikowsky! Der hat den Nussknacker geschrieben. Aber Pop mag ich auch.', ch: [['Den Nussknacker kenn ich!', 'end']] },
+    },
+    marie: {
+      start: { say: `Oh. Noch ${W() ? 'eine Neue' : 'ein Neuer'}. Ich bin Marie. Ich tanze übrigens am besten von allen.`, ch: [['Freut mich, dich kennenzulernen!', 'a'], ['Das werden wir ja sehen!', 'b']] },
+      a: { say: 'Hm. Mal sehen, ob du mithalten kannst.', ch: [['Ich gebe mir Mühe!', 'end']] },
+      b: { say: 'Pff. Madame Colletin sagt, ich hab die schönsten Pirouetten der ganzen Schule.', ch: [['Dann zeig sie mir mal!', 'end']] },
+    },
+    nora: {
+      start: { say: 'Oh … hallo. Ich bin Nora.', ch: [['Was liest du da?', 'a'], ['Du musst nicht schüchtern sein!', 'b']] },
+      a: { say: 'Ein Buch über Anna Pawlowa. Sie war eine berühmte Ballerina. Willst du es später ausleihen?', ch: [['Ja, gern!', 'end']] },
+      b: { say: `Danke … du bist nett, ${n}. Ich glaube, wir werden Freunde.`, ch: [['Ganz bestimmt!', 'end']] },
+    },
+    leon: {
+      start: { say: 'Hi! Ich bin Leon. Weißt du, was Ballett-Tänzer zum Frühstück essen?', ch: [['Nein, was denn?', 'a']] },
+      a: { say: 'Pirouetten-Brötchen! Hahaha!', ch: [['Haha, der war gut!', 'b'], ['Der war schlecht!', 'c']] },
+      b: { say: 'Ich hab noch hundert davon! Tanzen kann ich aber noch besser.', ch: [['Das will ich sehen!', 'end']] },
+      c: { say: 'Okay, okay. Aber tanzen kann ich besser als Witze erzählen, versprochen!', ch: [['Na gut!', 'end']] },
+    },
+    levi: {
+      start: { say: 'Salut! Ich bin Levi. Ich liebe Ballett! Am liebsten würde ich den ganzen Tag tanzen.', ch: [['Ich auch!', 'a'], ['Was magst du am meisten?', 'b']] },
+      a: { say: 'Super! Dann üben wir mal zusammen im Ballettsaal.', ch: [['Abgemacht!', 'end']] },
+      b: { say: 'Die großen Sprünge! Grand jeté heißt das. Da fühlt man sich, als könnte man fliegen.', ch: [['Das klingt toll!', 'end']] },
+    },
+    tom: {
+      start: { say: 'Ich bin Tom. Hast du meine Haare gesehen? Perfekt, oder? Und tanzen kann ich sowieso am besten.', ch: [['Deine Haare glänzen echt!', 'a'], ['Leon tanzt aber auch sehr gut.', 'b']] },
+      a: { say: 'Klar. Eine ganze Tube Gel. Jeden Morgen.', ch: [['Wow …', 'end']] },
+      b: { say: 'Leon? Pff … na ja. Vielleicht ein bisschen.', ch: [['Ein bisschen, ja!', 'end']] },
+    },
+    samy: {
+      start: { say: 'Hallo! Ich bin Samy. Schön, dass du da bist! Soll ich dir mit deinem Koffer helfen?', ch: [['Ja, gern!', 'a'], ['Nein danke, geht schon.', 'b']] },
+      a: { say: 'Kein Problem! Ich bin groß, ich trag das locker.', ch: [['Danke, Samy!', 'end']] },
+      b: { say: 'Okay! Sag Bescheid, wenn du was brauchst.', ch: [['Mach ich!', 'end']] },
+    },
+    colletin: {
+      start: { say: `Ah. Du bist also ${W() ? 'die neue Schülerin' : 'der neue Schüler'}. Ich bin Madame Colletin. In meinem Unterricht wird hart gearbeitet.`, ch: [['Bonjour, Madame Colletin!', 'good'], ['Hallo.', 'bad']] },
+      bad: { say: 'In meiner Schule sagt man „Bonjour, Madame".', ch: [['Bonjour, Madame Colletin!', 'good']] },
+      good: { say: 'Bien. Gute Manieren gefallen mir. Dafür bekommst du einen Lob-Punkt.', ch: [['Merci, Madame!', 'good2']], fx: 'star' },
+      good2: { say: 'Der Unterricht beginnt bald. Sei pünktlich, halte den Rücken gerade und übe fleißig. Die erste Aufführung ist schon bald!', ch: [['Oui, Madame!', 'end']] },
+    },
+  };
+  return D[id];
+}
+const AGAIN = {
+  elisabeth: ['Brauchst du Hilfe? Frag mich ruhig!', 'Ich übe gerade die fünfte Position.'],
+  johanna: ['Hörst du das? Mein neues Lieblingslied!', 'Lass uns nachher im Café quatschen!'],
+  marie: ['Stör mich nicht, ich übe.', 'Hast du meine Pirouette gesehen? Perfekt, oder?'],
+  nora: ['Ich bin gerade an einer spannenden Stelle …', 'Schön, dass du vorbeikommst.'],
+  leon: ['Was macht ein Tutu im Regen? Es wird ein Tropf-Tutu! Haha!', 'Bis später im Ballettsaal!'],
+  levi: ['Ich hab heute schon drei Mal geübt!', 'Ballett ist einfach das Schönste!'],
+  tom: ['Ich bin bestimmt bald der Star der Schule.', 'Na, bewunderst du wieder meine Haare?'],
+  samy: ['Alles gut bei dir?', 'Wenn du was brauchst, ich bin da!'],
+  colletin: ['Rücken gerade! Schultern runter!', 'Übung macht die Meisterin. Und den Meister.'],
+};
+const MOVEIN = {
+  elisabeth: 'Oh wie schön, du ziehst bei mir ein! Ich hab dir schon Platz im Schrank gemacht.',
+  johanna: 'Yay, eine Mitbewohnerin! Ich hoffe, du magst Musik!',
+  marie: 'Na gut … aber meine Seite vom Zimmer bleibt meine Seite! Und das Bad gehört morgens mir.',
+  nora: 'Wirklich? Bei mir? Ich … ich freu mich sehr!',
+  leon: 'Cool, ein Mitbewohner! Dann kann ich dir jeden Abend einen Witz erzählen!',
+  levi: 'Super! Dann können wir abends im Zimmer noch Sprünge üben!',
+  tom: 'Okay. Aber der Spiegel im Bad gehört morgens mir. Für meine Haare.',
+  samy: 'Willkommen! Komm, ich helf dir mit deinen Sachen!',
+};
+const TERRACE_LINES = {
+  elisabeth: 'Von hier oben sieht Paris so schön aus. Ich komme oft her, wenn ich nachdenken will.',
+  johanna: 'Abends hier oben Musik hören ist das Beste! Hör mal, wie schön der Eiffelturm leuchtet.',
+  marie: 'Ich bin nur hier, weil das Licht für meine Pirouetten so gut ist. Nicht weil es schön ist. Na gut, ein bisschen.',
+  nora: 'Hier oben ist es so ruhig. Perfekt zum Lesen.',
+  leon: 'Weißt du, warum der Eiffelturm nie friert? Weil er so viele Lichter-Jacken hat! Haha!',
+  levi: 'Ich dehne mich hier jeden Morgen. Mit Blick auf Paris macht das viel mehr Spaß!',
+  tom: 'Ich wette, man sieht mich von ganz Paris aus. Mit diesen Haaren!',
+  samy: 'Schön, dass du auch hier bist! Setz dich doch zu uns.',
+};
+let dlg = null;
+function startTalk(id, mode) {
+  const c = CHARS[id];
+  $('dlgName').textContent = c.name;
+  $('dlgFace').innerHTML = `<svg viewBox="-70 -320 140 140">${figureSVG(c.look, { noShadow: true, arms: ['unten', 'unten'] })}</svg>`;
+  $('dialog').hidden = false;
+  $('movein').hidden = true;
+  if (mode === 'movein') return showLine(id, { say: MOVEIN[id], ch: [['Ich freu mich!', 'end']] });
+  const first = id === 'colletin' ? !S.greetedTeacher : !S.met.includes(id);
+  if (first) { dlg = { id, tree: dialogs(id) }; showNode('start'); }
+  else if (S.scene === 'terrasse' && TERRACE_LINES[id]) showLine(id, { say: TERRACE_LINES[id], ch: [['Ja, total schön hier!', 'end']] });
+  else { const a = AGAIN[id]; showLine(id, { say: a[Math.floor(Math.random() * a.length)], ch: [['Bis später!', 'end']] }); }
+}
+function showNode(key) {
+  if (key === 'end') return endTalk();
+  const node = dlg.tree[key];
+  if (node.fx === 'star' && !S.greetedTeacher) { S.greetedTeacher = true; addStars(1); }
+  showLine(dlg.id, node);
+}
+function showLine(id, node) {
+  $('dlgText').textContent = node.say;
+  speak(node.say, id);
+  const box = $('dlgChoices'); box.innerHTML = '';
+  node.ch.forEach(([t, next]) => {
+    const b = document.createElement('button'); b.className = 'btn'; b.textContent = t;
+    b.onclick = () => { if (next === 'end') endTalk(); else showNode(next); };
+    box.appendChild(b);
+  });
+  dlg = dlg && dlg.id === id ? dlg : { id, tree: { } };
+}
+function endTalk() {
+  const id = dlg && dlg.id;
+  $('dialog').hidden = true; stopSpeak();
+  if (id && id !== 'colletin' && !S.met.includes(id)) {
+    S.met.push(id);
+    toast(`Du hast ${T(id)} kennengelernt! (${S.met.length}/8)`);
+  }
+  dlg = null;
+  enterScene(S.scene, player.x);   // Ausrufezeichen aktualisieren
+}
+
+// =====================================================================  Vorlesen
+let voice = null;
+function pickVoice() { try { const vs = speechSynthesis.getVoices(); voice = vs.find(v => v.lang === 'de-DE') || vs.find(v => v.lang && v.lang.startsWith('de')) || null; } catch (e) { voice = null; } }
+try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch (e) {}
+function speak(text, id) {
+  if (!S.sound) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[„"]/g, ''));
+    u.lang = 'de-DE'; if (voice) u.voice = voice;
+    const p = { tom: 1.15, leon: 1.05, levi: 1.05, samy: .95, colletin: .85, nora: 1.25, marie: 1.2, johanna: 1.15, elisabeth: 1.2 }[id] || 1.1;
+    u.pitch = p; u.rate = id === 'colletin' ? .9 : 1;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function stopSpeak() { try { speechSynthesis.cancel(); } catch (e) {} }
+$('dlgSpeak').onclick = () => { const was = S.sound; S.sound = true; speak($('dlgText').textContent, dlg && dlg.id); S.sound = was; };
+function updateSoundBtn() { $('soundBtn').textContent = S && S.sound ? '🔊' : '🔇'; }
+$('soundBtn').onclick = () => { S.sound = !S.sound; if (!S.sound) stopSpeak(); updateSoundBtn(); save(); toast(S.sound ? 'Vorlesen ist an' : 'Vorlesen ist aus'); };
+
+// =====================================================================  Punkte, Aufgaben, Hinweise
+function addStars(n) { S.stars += n; $('stars').textContent = S.stars; toast(`★ +${n} Lob-Punkt von Madame Colletin!`); save(); }
+function updateTask() {
+  let t;
+  if (S.room == null) t = `<b>Aufgabe:</b> Such dir ein Zimmer aus! Die Zimmer ${W() ? 'der Mädchen sind im 2. Stock' : 'der Jungen sind im 3. Stock'}. Nimm die Treppe.`;
+  else if (!S.greetedTeacher) t = `<b>Aufgabe:</b> Geh in den Ballettsaal im 1. Stock und begrüße Madame Colletin.`;
+  else if (S.met.length < 8) t = `<b>Aufgabe:</b> Lerne alle Tänzerinnen und Tänzer kennen (${S.met.length}/8). Klopf an ihre Türen!`;
+  else t = `<b>Super!</b> Du kennst jetzt alle. Der Unterricht bei Madame Colletin kommt im nächsten Teil des Spiels.`;
+  $('task').innerHTML = t;
+}
+let toastTimer = 0;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600); }
+function sparkle() {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  let h = ''; for (let i = 0; i < 10; i++) h += star(player.x - 120 + Math.random() * 240, FLOOR_Y - 120 - Math.random() * 260, 8 + Math.random() * 8);
+  g.innerHTML = h; actorsG.appendChild(g);
+  g.animate?.([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-60px)' }], { duration: 1400, easing: 'ease-out' });
+  setTimeout(() => g.remove(), 1400);
+}
+
+// =====================================================================  Menü
+$('menuBtn').onclick = () => {
+  openModal(`<h2>Menü</h2>
+    <p>${S.player.name} · ★ ${S.stars} Lob-Punkte · ${S.room ? 'Zimmer ' + S.room : 'noch kein Zimmer'}</p>
+    <button class="btn" id="mBack">Weiterspielen</button>
+    <button class="btn" id="mEntree">Zurück zur Eingangshalle</button>
+    <div class="row" style="align-items:center"><b>Tageszeit:</b>${[['', 'Echte Uhrzeit'], ...Object.entries(PHASES)].map(([k, t]) => `<button class="chip" data-ph="${k}" aria-pressed="${(S.timeOverride || '') === k}">${t}</button>`).join('')}</div>
+    <button class="btn" id="mNew">Neues Spiel beginnen</button>`);
+  $('mBack').onclick = closeModal;
+  document.querySelectorAll('[data-ph]').forEach(b => b.onclick = () => { S.timeOverride = b.dataset.ph || null; closeModal(); enterScene(S.scene, player.x); toast('Tageszeit: ' + (S.timeOverride ? PHASES[S.timeOverride] : 'echte Uhrzeit (' + PHASES[phase()] + ')')); });
+  $('mEntree').onclick = () => { closeModal(); transition(() => enterScene('floor0', 300)); };
+  $('mNew').onclick = () => {
+    $('modalPanel').innerHTML = `<h2>Wirklich neu beginnen?</h2><p>Dein Zimmer, deine Lob-Punkte und alle Bekanntschaften werden gelöscht.</p><div class="row"><button class="btn" id="mNo">Nein</button><button class="btn primary" id="mYes">Ja, neu beginnen</button></div>`;
+    $('mNo').onclick = closeModal;
+    $('mYes').onclick = () => { closeModal(); try { localStorage.removeItem(SAVE_KEY); } catch (e) {} showStart(null); };
+  };
+};
+
+// =====================================================================  Start & Avatar
+const OPTIONS = {
+  skin: [['hell', SKIN.hell], ['mittel', SKIN.mittel], ['dunkel', SKIN.dunkel]],
+  hair: [['braun', HAIR.braun], ['blond', HAIR.blond], ['schwarz', HAIR.schwarz], ['rot', HAIR.rot], ['dunkelbraun', HAIR.dunkelbraun]],
+  eyes: [['braun', EYES.braun], ['blau', EYES.blau], ['gruen', EYES.gruen], ['grau', EYES.grau]],
+  styleW: [['lang_glatt', 'Lang'], ['schulter', 'Schulterlang'], ['locken_lang', 'Locken'], ['dutt', 'Dutt'], ['zopf', 'Zopf']],
+  styleM: [['kurz', 'Kurz'], ['seitenscheitel', 'Scheitel'], ['locken_kurz', 'Locken'], ['wellig', 'Wellig'], ['gegelt', 'Gegelt']],
+  color: ['#f59ab8', '#b9a2e6', '#8fd3b6', '#9ad1f5', '#f6d26b', '#ff8c7a', '#4b6fb5', '#f6f0f4'],
+};
+const lighten = c => { const n = parseInt(c.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, f = v => Math.round(v + (255 - v) * .45); return '#' + [f(r), f(g), f(b)].map(v => v.toString(16).padStart(2, '0')).join(''); };
+let draft = null;
+function showStart(saved) {
+  $('start').hidden = false;
+  const card = $('startCard');
+  if (saved) {
+    card.innerHTML = `<h1>École de Ballet Étoile</h1><div class="sub">Paris</div>
+      <div class="preview" style="height:300px;max-width:260px;margin:0 auto;width:100%"><svg viewBox="-110 -330 220 345">${figureSVG({ ...saved.player, expr: 'froh', arms: ['unten', 'winken'] })}</svg></div>
+      <div class="sub">Schön, dass du wieder da bist, ${saved.player.name}!</div>
+      <div class="start-actions"><button class="btn big primary" id="sGo">Weiterspielen</button><button class="btn big" id="sNew">Neues Spiel</button></div>`;
+    $('sGo').onclick = () => begin(saved);
+    $('sNew').onclick = () => showStart(null);
+    return;
+  }
+  draft = draft || { kind: 'w', skin: 'hell', hair: 'braun', hairStyle: 'lang_glatt', eyes: 'braun', color: '#f59ab8', name: '' };
+  renderEditor();
+}
+function renderEditor() {
+  const d = draft, card = $('startCard');
+  const styles = d.kind === 'w' ? OPTIONS.styleW : OPTIONS.styleM;
+  if (!styles.some(s => s[0] === d.hairStyle)) d.hairStyle = styles[0][0];
+  const sw = (key, list) => list.map(([v, c]) => `<button class="sw" style="background:${c}" aria-label="${v}" aria-pressed="${d[key] === v}" data-k="${key}" data-v="${v}"></button>`).join('');
+  card.innerHTML = `<h1>École de Ballet Étoile</h1><div class="sub">Willkommen in Paris! Wer bist du?</div>
+    <div class="editor">
+      <div class="preview"><svg viewBox="-110 -330 220 345">${figureSVG({ ...d, tutu: lighten(d.color), expr: 'froh', arms: ['unten', 'winken'] })}</svg></div>
+      <div class="opts">
+        <div class="opt-row"><span class="lbl">Ich bin …</span><div class="swatches">
+          <button class="chip" aria-pressed="${d.kind === 'w'}" data-k="kind" data-v="w">eine Tänzerin</button>
+          <button class="chip" aria-pressed="${d.kind === 'm'}" data-k="kind" data-v="m">ein Tänzer</button></div></div>
+        <div class="opt-row"><label for="pname">Mein Name</label><input id="pname" maxlength="14" autocomplete="off" placeholder="${d.kind === 'w' ? 'z. B. Emma' : 'z. B. Paul'}" value="${d.name.replace(/"/g, '')}"></div>
+        <div class="opt-row"><span class="lbl">Hautfarbe</span><div class="swatches">${sw('skin', OPTIONS.skin)}</div></div>
+        <div class="opt-row"><span class="lbl">Haarfarbe</span><div class="swatches">${sw('hair', OPTIONS.hair)}</div></div>
+        <div class="opt-row"><span class="lbl">Frisur</span><div class="swatches">${styles.map(([v, t]) => `<button class="chip" aria-pressed="${d.hairStyle === v}" data-k="hairStyle" data-v="${v}">${t}</button>`).join('')}</div></div>
+        <div class="opt-row"><span class="lbl">Augenfarbe</span><div class="swatches">${sw('eyes', OPTIONS.eyes)}</div></div>
+        <div class="opt-row"><span class="lbl">Farbe ${d.kind === 'w' ? 'vom Tutu' : 'vom Shirt'}</span><div class="swatches">${OPTIONS.color.map(c => `<button class="sw" style="background:${c}" aria-label="Farbe" aria-pressed="${d.color === c}" data-k="color" data-v="${c}"></button>`).join('')}</div></div>
+      </div>
+    </div>
+    <div class="start-actions"><button class="btn big primary" id="sGo">Los geht's! ♥</button></div>`;
+  card.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { d.name = $('pname').value; d[b.dataset.k] = b.dataset.v; renderEditor(); });
+  $('pname').oninput = e => { d.name = e.target.value; };
+  $('sGo').onclick = () => {
+    const name = ($('pname').value.trim() || (d.kind === 'w' ? 'Emma' : 'Paul')).slice(0, 14);
+    const st = defaultState();
+    st.player = { kind: d.kind, skin: d.skin, hair: d.hair, hairStyle: d.hairStyle, eyes: d.eyes, color: d.color, tutu: lighten(d.color), name };
+    begin(st, true);
+  };
+}
+function begin(state, fresh) {
+  S = state;
+  $('start').hidden = true;
+  $('stars').textContent = S.stars;
+  updateSoundBtn();
+  resize();
+  enterScene(S.scene || 'floor0', S.x || 520);
+  if (fresh) setTimeout(() => toast(`Bienvenue, ${S.player.name}! Willkommen in der École de Ballet Étoile!`), 400);
+}
+addEventListener('resize', resize);
+window.claude?.hot?.snapshot?.(() => S ? { ...S, x: player.x } : null);
+function boot(data) {
+  const saved = (data && data.player) ? data : load();
+  if (data && data.player) return begin(data);
+  showStart(saved);
+}
+addEventListener('beforeunload', () => { if (S) { S.x = player.x; save(); } });
+setInterval(() => { if (S && cur) { S.x = player.x; save(); } }, 4000);
+let lastPhase = null;
+setInterval(() => { if (!S || !cur) return; const ph = phase(); if (lastPhase && ph !== lastPhase && $('dialog').hidden && $('modal').hidden && !player.moving) enterScene(S.scene, player.x); lastPhase = ph; }, 30000);
+window.__etoile = { go: (id, x) => enterScene(id, x), state: () => S };
+requestAnimationFrame(tick);
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? null);
+})();
+</script>

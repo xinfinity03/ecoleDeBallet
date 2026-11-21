@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 620" width="700" height="620">
+  <!-- Ballettkleid (Tutu), nach der Kinderzeichnung neu gezeichnet. -->
+  <defs>
+    <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="5" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
+    </filter>
+    <filter id="crayon" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.08 0.9" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.5 0.55" result="grain"/>
+      <feComposite in="grain" in2="SourceGraphic" operator="in" result="g2"/>
+      <feBlend in="SourceGraphic" in2="g2" mode="screen"/>
+    </filter>
+    <linearGradient id="bodice" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f27fa6"/><stop offset=".45" stop-color="#ffa3c2"/><stop offset="1" stop-color="#e86794"/>
+    </linearGradient>
+    <radialGradient id="tulle" cx=".5" cy=".1" r=".9">
+      <stop offset="0" stop-color="#ffc4d8"/><stop offset=".7" stop-color="#ff9fbf"/><stop offset="1" stop-color="#f17aa3"/>
+    </radialGradient>
+    <linearGradient id="sash" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff4a3d"/><stop offset="1" stop-color="#c81e1e"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#wobble)" stroke="#7a5a60" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <g filter="url(#crayon)">
+      <!-- hintere Tüll-Lage -->
+      <path d="M140 300 C70 330 40 400 60 450 C40 480 70 520 110 512 C140 545 190 540 215 525 C250 552 310 550 345 535 C385 555 445 552 480 528 C515 545 570 538 592 510 C635 515 660 470 640 440 C665 395 630 330 560 300 Z" fill="#f58db0"/>
+      <!-- vordere Tüll-Lage -->
+      <path d="M200 290 C120 320 92 380 105 425 C92 458 125 488 160 480 C185 505 230 505 255 488 C285 512 335 512 360 495 C392 514 440 512 465 490 C495 506 545 500 562 472 C600 476 618 440 600 412 C612 370 580 318 505 292 Z" fill="url(#tulle)"/>
+      <!-- Oberteil mit Herzausschnitt -->
+      <path d="M262 112 C262 92 278 82 300 86 C322 90 338 104 350 122 C362 104 378 90 400 86 C422 82 438 92 438 112 L440 300 C400 316 300 316 260 300 Z" fill="url(#bodice)"/>
+    </g>
+
+    <!-- Schärpe -->
+    <path d="M256 250 C310 288 390 288 444 250 L446 296 C392 336 308 336 254 296 Z" fill="url(#sash)"/>
+    <!-- Schleife -->
+    <path d="M410 290 C440 268 478 270 478 296 C478 320 440 322 410 300 Z" fill="url(#sash)"/>
+    <path d="M410 298 C430 330 420 360 404 372 C398 350 402 320 404 300 Z" fill="#d42a24"/>
+    <path d="M412 300 C438 322 456 348 452 366 C434 356 418 330 410 304 Z" fill="#b81c1c"/>
+    <circle cx="410" cy="296" r="11" fill="#e8352c"/>
+  </g>
+
+  <!-- Tüll-Falten und Glanz -->
+  <g fill="none" stroke="#fff" stroke-linecap="round" opacity=".55" stroke-width="4">
+    <path d="M200 340 C190 380 185 420 190 460"/>
+    <path d="M270 330 C262 380 262 430 268 480"/>
+    <path d="M350 330 C348 380 350 440 354 488"/>
+    <path d="M430 330 C436 380 440 430 440 478"/>
+    <path d="M500 340 C512 380 520 420 520 462"/>
+  </g>
+  <path d="M292 110 C298 160 300 210 298 252" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity=".35" fill="none"/>
+
+  <!-- Glitzer -->
+  <g fill="#fff">
+    <path d="M230 400 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" opacity=".9"/>
+    <path d="M470 420 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".9"/>
+    <path d="M360 160 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" opacity=".8"/>
+    <circle cx="320" cy="440" r="4" opacity=".8"/><circle cx="410" cy="380" r="3.5" opacity=".8"/>
+    <circle cx="160" cy="440" r="3" opacity=".7"/><circle cx="540" cy="380" r="3" opacity=".7"/>
+  </g>
+</svg>

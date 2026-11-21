@@ -104,6 +104,51 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
 #rotate { position: fixed; inset: 0; z-index: 60; background: var(--night); color: #fff; display: none; place-items: center; text-align: center;
   font: 800 22px var(--ui-font); padding: 24px; }
 @media (orientation: portrait) and (max-width: 900px) { #rotate { display: grid; } }
+
+/* Ballettunterricht (Rhythmus-Spiel) */
+#lesson { position: fixed; inset: 0; z-index: 35; background: #fdf0d8; overflow: hidden; }
+#lessonStage { position: absolute; left: 0; right: 0; top: calc(176px + env(safe-area-inset-top, 0px)); bottom: 168px; width: 100%; height: auto; }
+.ls-lane { position: absolute; top: calc(62px + env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); height: 108px;
+  background: rgba(255,248,240,.92); border: 3px solid var(--plum); border-radius: 26px; overflow: hidden; }
+.ls-target { position: absolute; top: 50%; left: 16%; width: 96px; height: 96px; margin: -48px 0 0 -48px; border-radius: 50%; border: 4px dashed var(--rose);
+  display: grid; place-items: end center; z-index: 1; }
+.ls-target span { font: 800 13px var(--ui-font); color: var(--rose); background: var(--cream); padding: 0 6px; border-radius: 6px; transform: translateY(12px); }
+.ls-target.beat { transform: scale(1.12); background: rgba(194,69,110,.12); }
+.ls-card { position: absolute; top: 50%; width: 86px; height: 92px; margin: -46px 0 0 -43px; background: #fff; border: 3px solid var(--plum); border-radius: 18px;
+  display: grid; grid-template-rows: 1fr auto; justify-items: center; z-index: 2; will-change: transform; }
+.ls-card svg { width: 64px; height: 64px; }
+.ls-card b { font-size: 12px; font-weight: 800; color: var(--plum); line-height: 1; padding-bottom: 5px; }
+.ls-card.hit { border-color: #3f9a6a; background: #e6f6ec; }
+.ls-card.miss { border-color: #b7a9b0; opacity: .45; }
+.ls-hud { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ls-hud .btn { padding: 7px 16px; font-size: 16px; }
+.ls-buttons { position: absolute; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+  padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); }
+.pose-btn { width: 132px; height: 148px; border: 4px solid var(--plum); border-radius: 22px; background: var(--cream); box-shadow: 0 4px 0 rgba(43,34,54,.35);
+  display: grid; grid-template-rows: 1fr auto auto; justify-items: center; padding: 4px 4px 8px; cursor: pointer; color: var(--plum); touch-action: manipulation; }
+.pose-btn svg { width: 92px; height: 92px; }
+.pose-btn b { font-size: 16px; font-weight: 800; line-height: 1.1; }
+.pose-btn small { font-size: 11.5px; font-weight: 700; opacity: .75; line-height: 1.1; }
+.pose-btn:active, .pose-btn.pressed { transform: translateY(3px); box-shadow: 0 1px 0 rgba(43,34,54,.35); background: var(--rose-soft); }
+@media (max-height: 700px) { .pose-btn { width: 110px; height: 124px; } .pose-btn svg { width: 72px; height: 72px; } #lessonStage { bottom: 142px; } }
+#lsFeedback { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.6); font: 700 44px var(--title-font); opacity: 0; pointer-events: none;
+  text-shadow: 0 3px 0 #fff, 0 -2px 0 #fff, 2px 0 0 #fff, -2px 0 0 #fff; transition: transform .15s, opacity .15s; z-index: 3; }
+#lsFeedback.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.ls-bubble { position: absolute; left: max(16px, 7vw); top: calc(186px + env(safe-area-inset-top, 0px)); max-width: 300px; background: #fff; border: 3px solid var(--plum); border-radius: 18px;
+  padding: 8px 14px; font-weight: 800; font-size: 17px; z-index: 3; }
+.ls-bubble[hidden] { display: none; }
+#lsPanelBg { position: absolute; inset: 0; background: rgba(26,18,32,.4); display: grid; place-items: center; padding: 16px; z-index: 5; }
+.lvl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center; text-align: left; }
+.lvl small { grid-column: 2; font-weight: 700; opacity: .75; font-size: 14px; }
+.lvl .stars-earned { grid-row: span 2; font-size: 22px; color: #e0a91e; min-width: 70px; text-align: center; }
+.learn { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.learn button { display: grid; justify-items: center; gap: 2px; background: #fff; border: 3px solid var(--plum); border-radius: 18px; padding: 8px; cursor: pointer; color: var(--plum); font-family: var(--ui-font); }
+.learn svg { width: 90px; height: 90px; }
+.learn b { font-size: 17px; } .learn small { font-size: 13px; font-weight: 700; opacity: .8; }
+.result-stars { font-size: 56px; text-align: center; color: #e0a91e; letter-spacing: 6px; }
+@media (prefers-reduced-motion: reduce) { #lsFeedback { transition: none; } }
+
 @keyframes twinkle { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 .twinkle { animation: twinkle 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { #fade, #toast { transition: none; } .twinkle { animation: none; } }
@@ -132,6 +177,16 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
   <div class="choices" id="dlgChoices"></div>
 </div>
 <div id="modal" class="modal-bg" hidden><div class="panel" id="modalPanel"></div></div>
+
+<div id="lesson" hidden>
+  <svg id="lessonStage" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMax slice"></svg>
+  <div class="ls-hud"><div class="pill place" id="lsInfo">Ballettunterricht</div><div class="pill" id="lsScore">✨ 0</div><button class="btn" id="lsQuit">Aufhören</button></div>
+  <div class="ls-lane" id="lane"><div class="ls-target" id="lsTarget"><span>Jetzt!</span></div></div>
+  <div id="lsFeedback"></div>
+  <div class="ls-bubble" id="lsBubble" hidden></div>
+  <div class="ls-buttons" id="lsButtons"></div>
+  <div id="lsPanelBg" hidden><div class="panel" id="lsPanel"></div></div>
+</div>
 <div id="toast"></div>
 <div id="fade"></div>
 
@@ -229,6 +284,9 @@ const ARM = {
   huefte: [s => `M${s*23} -186 L${s*48} -156 L${s*24} -128`, null],
   winken: [s => `M${s*23} -186 Q${s*52} -210 ${s*54} -258`, [54, -258]],
   buch: [s => `M${s*23} -186 Q${s*32} -150 ${s*12} -146`, [12, -146]],
+  bras_bas: [s => `M${s*23} -186 Q${s*44} -140 ${s*12} -120`, [12, -120]],
+  premiere: [s => `M${s*23} -186 Q${s*56} -168 ${s*12} -158`, [12, -158]],
+  en_haut: [s => `M${s*23} -186 Q${s*62} -250 ${s*12} -306`, [12, -306]],
 };
 function arm(pose, s, sleeve) {
   const [fn, end] = ARM[pose];
@@ -242,11 +300,18 @@ function figureSVG(look, opts = {}) {
   const k = look.kind, col = look.color, arms = opts.arms || look.arms || ['unten', 'unten'];
   let g = `<g style="--skin:${skin}">`;
   if (!opts.noShadow) g += `<ellipse cx="0" cy="2" rx="50" ry="8" fill="#000" opacity=".13"/>`;
-  g += hairBack(look.hairStyle, hc);
+  const legs = opts.legs || 'normal';
+  const dy = { plie: 26, releve: -16 }[legs] || 0, hip = -116 + dy;
   const leg = k === 'w' ? '#f3cfd6' : (k === 'lehrerin' ? '#2f2838' : '#3a3550');
-  g += `<g class="legs">` + outlined('M-11 -116 L-13 -10', leg, 15) + outlined('M11 -116 L13 -10', leg, 15);
   const shoe = k === 'm' ? '#f4f0ea' : '#f7b6c8';
-  g += `<ellipse cx="-15" cy="-5" rx="11" ry="6" fill="${shoe}" stroke="${LINE}" stroke-width="${LW}"/><ellipse cx="15" cy="-5" rx="11" ry="6" fill="${shoe}" stroke="${LINE}" stroke-width="${LW}"/></g>`;
+  const sh = (x, y, rx = 11, ry = 6, rot = 0) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${rot} ${x} ${y})" fill="${shoe}" stroke="${LINE}" stroke-width="${LW}"/>`;
+  g += `<g class="legs">`;
+  if (legs === 'plie') g += outlined(`M-11 ${hip} Q-50 -54 -17 -9`, leg, 15) + outlined(`M11 ${hip} Q50 -54 17 -9`, leg, 15) + sh(-22, -5, 12, 6, -12) + sh(22, -5, 12, 6, 12);
+  else if (legs === 'releve') g += outlined(`M-11 ${hip} L-12 -30`, leg, 15) + outlined(`M11 ${hip} L12 -30`, leg, 15) + sh(-12, -16, 7, 15) + sh(12, -16, 7, 15);
+  else if (legs === 'arabesque') g += outlined(`M11 ${hip} L104 -168`, leg, 15) + sh(112, -176, 13, 6, -50) + outlined(`M-9 ${hip} L-11 -10`, leg, 15) + sh(-13, -5);
+  else g += outlined(`M-11 ${hip} L-13 -10`, leg, 15) + outlined(`M11 ${hip} L13 -10`, leg, 15) + sh(-15, -5) + sh(15, -5);
+  g += `</g><g transform="translate(0,${dy})">`;
+  g += hairBack(look.hairStyle, hc);
   g += `<rect x="-8" y="-206" width="16" height="22" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
   if (k === 'w') {
     const t = look.tutu || col;
@@ -265,8 +330,9 @@ function figureSVG(look, opts = {}) {
     for (let i = 0; i < 7; i++) g += `<circle cx="${-12 + i * 4}" cy="${-180 - Math.abs(3 - i) * 1.6}" r="2.2" fill="#fff" stroke="#c9c2cc" stroke-width=".8"/>`;
   }
   const sleeve = k === 'w' ? 'var(--skin)' : (k === 'm' ? col : '#2f2838');
-  if (arms[0] !== 'oben') g += arm(arms[0], -1, sleeve);
-  if (arms[1] !== 'oben') g += arm(arms[1], 1, sleeve);
+  const up = a => a === 'oben' || a === 'en_haut';
+  if (!up(arms[0])) g += arm(arms[0], -1, sleeve);
+  if (!up(arms[1])) g += arm(arms[1], 1, sleeve);
   g += `<ellipse cx="-35" cy="-234" rx="6" ry="8" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/><ellipse cx="35" cy="-234" rx="6" ry="8" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
   g += `<ellipse cx="0" cy="-236" rx="35" ry="37" fill="var(--skin)" stroke="${LINE}" stroke-width="${LW}"/>`;
   g += face(look.expr || 'nett', eye);
@@ -275,9 +341,9 @@ function figureSVG(look, opts = {}) {
   if (ex === 'kopfhoerer') g += `<path d="M-30 -184 Q0 -164 30 -184" fill="none" stroke="#e85d8a" stroke-width="5"/><rect x="-36" y="-192" width="13" height="18" rx="5" fill="#e85d8a" stroke="${LINE}" stroke-width="1.6"/><rect x="23" y="-192" width="13" height="18" rx="5" fill="#e85d8a" stroke="${LINE}" stroke-width="1.6"/>`;
   if (ex === 'diadem') g += `<path d="M-20 -266 L-14 -280 L-6 -270 L0 -286 L6 -270 L14 -280 L20 -266 Z" fill="#f6c64b" stroke="${LINE}" stroke-width="1.6"/><circle cx="0" cy="-277" r="3" fill="#f28ab0"/>`;
   if (ex === 'buch') g += `<g transform="rotate(-6 0 -150)"><rect x="-26" y="-170" width="52" height="36" rx="3" fill="#7fa6e0" stroke="${LINE}" stroke-width="${LW}"/><line x1="0" y1="-170" x2="0" y2="-134" stroke="${LINE}" stroke-width="1.6"/><path d="M-20 -160 h14 M-20 -152 h12 M6 -160 h14 M6 -152 h10" stroke="#fff" stroke-width="2"/></g>`;
-  if (arms[0] === 'oben') g += arm('oben', -1, sleeve);
-  if (arms[1] === 'oben') g += arm('oben', 1, sleeve);
-  return g + '</g>';
+  if (up(arms[0])) g += arm(arms[0], -1, sleeve);
+  if (up(arms[1])) g += arm(arms[1], 1, sleeve);
+  return g + '</g></g>';
 }
 function star(x, y, r = 12) {
   return `<path transform="translate(${x},${y}) scale(${r / 11})" d="M0 -11 l3.2 6.6 7.3 1 -5.3 5.1 1.3 7.3 -6.5 -3.5 -6.5 3.5 1.3 -7.3 -5.3 -5.1 7.3 -1 z" fill="#f6c64b" stroke="${LINE}" stroke-width="1.6"/>`;
@@ -771,7 +837,7 @@ function enterScene(id, x) {
     g.setAttribute('data-act', `talk:${n.id}`);
     g.style.cursor = 'pointer';
     g.innerHTML = `<g transform="translate(${n.x},${FLOOR_Y + (cur.floorOffset || 0)}) scale(${s})"><g class="breathe">${figureSVG(c.look)}</g><rect x="-70" y="-310" width="140" height="320" fill="transparent"/></g>`;
-    if (!S.met.includes(n.id) && n.id !== 'colletin' || (n.id === 'colletin' && !S.greetedTeacher)) {
+    if (!S.met.includes(n.id) && n.id !== 'colletin' || (n.id === 'colletin' && (!S.greetedTeacher || !S.lessonsDone))) {
       g.innerHTML += `<g transform="translate(${n.x + 50},${FLOOR_Y + (cur.floorOffset || 0) - 330 * s})"><circle r="22" fill="#fff8f0" stroke="#c2456e" stroke-width="3"/><text y="9" text-anchor="middle" font-size="26" font-weight="800" fill="#c2456e">!</text></g>`;
     }
     actorsG.appendChild(g);
@@ -943,7 +1009,7 @@ function dialogs(id) {
       start: { say: `Ah. Du bist also ${W() ? 'die neue Schülerin' : 'der neue Schüler'}. Ich bin Madame Colletin. In meinem Unterricht wird hart gearbeitet.`, ch: [['Bonjour, Madame Colletin!', 'good'], ['Hallo.', 'bad']] },
       bad: { say: 'In meiner Schule sagt man „Bonjour, Madame".', ch: [['Bonjour, Madame Colletin!', 'good']] },
       good: { say: 'Bien. Gute Manieren gefallen mir. Dafür bekommst du einen Lob-Punkt.', ch: [['Merci, Madame!', 'good2']], fx: 'star' },
-      good2: { say: 'Der Unterricht beginnt bald. Sei pünktlich, halte den Rücken gerade und übe fleißig. Die erste Aufführung ist schon bald!', ch: [['Oui, Madame!', 'end']] },
+      good2: { say: 'Sei immer pünktlich, halte den Rücken gerade und übe fleißig. Die erste Aufführung ist schon bald! Möchtest du gleich deine erste Stunde haben?', ch: [['Oui, Madame! Gleich jetzt!', 'lesson'], ['Später, Madame.', 'end']] },
     },
   };
   return D[id];
@@ -989,6 +1055,7 @@ function startTalk(id, mode) {
   if (mode === 'movein') return showLine(id, { say: MOVEIN[id], ch: [['Ich freu mich!', 'end']] });
   const first = id === 'colletin' ? !S.greetedTeacher : !S.met.includes(id);
   if (first) { dlg = { id, tree: dialogs(id) }; showNode('start'); }
+  else if (id === 'colletin') { const a = AGAIN.colletin; showLine(id, { say: a[Math.floor(Math.random() * a.length)] + ' Bereit für den Unterricht?', ch: [['Ja, ich möchte üben!', 'lesson'], ['Später, Madame.', 'end']] }); }
   else if (S.scene === 'terrasse' && TERRACE_LINES[id]) showLine(id, { say: TERRACE_LINES[id], ch: [['Ja, total schön hier!', 'end']] });
   else { const a = AGAIN[id]; showLine(id, { say: a[Math.floor(Math.random() * a.length)], ch: [['Bis später!', 'end']] }); }
 }
@@ -1004,7 +1071,7 @@ function showLine(id, node) {
   const box = $('dlgChoices'); box.innerHTML = '';
   node.ch.forEach(([t, next]) => {
     const b = document.createElement('button'); b.className = 'btn'; b.textContent = t;
-    b.onclick = () => { if (next === 'end') endTalk(); else showNode(next); };
+    b.onclick = () => { if (next === 'end') endTalk(); else if (next === 'lesson') { endTalk(); openLesson(); } else showNode(next); };
     box.appendChild(b);
   });
   dlg = dlg && dlg.id === id ? dlg : { id, tree: { } };
@@ -1046,8 +1113,9 @@ function updateTask() {
   let t;
   if (S.room == null) t = `<b>Aufgabe:</b> Such dir ein Zimmer aus! Die Zimmer ${W() ? 'der Mädchen sind im 2. Stock' : 'der Jungen sind im 3. Stock'}. Nimm die Treppe.`;
   else if (!S.greetedTeacher) t = `<b>Aufgabe:</b> Geh in den Ballettsaal im 1. Stock und begrüße Madame Colletin.`;
+  else if (!S.lessonsDone) t = `<b>Aufgabe:</b> Nimm an deiner ersten Ballettstunde teil. Sprich Madame Colletin im Ballettsaal an.`;
   else if (S.met.length < 8) t = `<b>Aufgabe:</b> Lerne alle Tänzerinnen und Tänzer kennen (${S.met.length}/8). Klopf an ihre Türen!`;
-  else t = `<b>Super!</b> Du kennst jetzt alle. Der Unterricht bei Madame Colletin kommt im nächsten Teil des Spiels.`;
+  else t = `<b>Super!</b> Du kennst jetzt alle. Übe weiter bei Madame Colletin und sammle Lob-Punkte. Schaffst du überall drei Sterne?`;
   $('task').innerHTML = t;
 }
 let toastTimer = 0;
@@ -1059,6 +1127,260 @@ function sparkle() {
   g.animate?.([{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-60px)' }], { duration: 1400, easing: 'ease-out' });
   setTimeout(() => g.remove(), 1400);
 }
+
+
+// =====================================================================  Ballettunterricht
+const POSES = {
+  bras_bas: { name: 'Bras bas', de: 'Arme rund nach unten', arms: ['bras_bas', 'bras_bas'], legs: 'normal' },
+  seconde: { name: 'Seconde', de: 'Arme zur Seite', arms: ['offen', 'offen'], legs: 'normal' },
+  en_haut: { name: 'En haut', de: 'Arme rund nach oben', arms: ['en_haut', 'en_haut'], legs: 'normal' },
+  plie: { name: 'Plié', de: 'Knie beugen', arms: ['huefte', 'huefte'], legs: 'plie' },
+  releve: { name: 'Relevé', de: 'Auf die Zehenspitzen', arms: ['premiere', 'premiere'], legs: 'releve' },
+  arabesque: { name: 'Arabesque', de: 'Ein Bein nach hinten', arms: ['winken', 'offen'], legs: 'arabesque' },
+};
+const LEVELS = {
+  leicht: { name: 'Leicht', info: '2 Positionen, langsam', poses: ['seconde', 'en_haut'], bpm: 72, gap: 2, cards: 12, win: .36 },
+  mittel: { name: 'Mittel', info: '4 Positionen', poses: ['bras_bas', 'seconde', 'en_haut', 'plie'], bpm: 84, gap: 2, cards: 16, win: .3 },
+  schwer: { name: 'Schwer', info: '6 Positionen, schneller', poses: ['bras_bas', 'seconde', 'en_haut', 'plie', 'releve', 'arabesque'], bpm: 96, gap: 2, cards: 20, win: .24 },
+};
+const poseOpts = key => key ? { arms: POSES[key].arms, legs: POSES[key].legs } : { arms: ['unten', 'unten'] };
+const miniFig = (look, key, vb = '-120 -340 240 350') => `<svg viewBox="${vb}">${figureSVG({ ...look, expr: 'froh' }, { ...poseOpts(key), noShadow: true })}</svg>`;
+
+let L = null;          // laufende Unterrichtsstunde
+let AC = null;         // AudioContext
+function audio() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+  if (AC && AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(freq, t, dur, vol, type = 'triangle') {
+  if (!AC) return;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
+// Klavierbegleitung wie im Ballettsaal: C – a – F – G
+const PROG = [[48, 60, 64, 67], [45, 57, 60, 64], [41, 57, 60, 65], [43, 55, 59, 62]];
+const MELODY = [72, 76, 79, 76, 72, 74, 76, 72, 69, 72, 76, 72, 71, 74, 79, 74];
+function playBeat(b, t, beat) {
+  if (b < 0) { tone(b === -1 ? 1568 : 1046, t, .12, .16, 'square'); return; }   // Einzählen
+  const ch = PROG[Math.floor(b / 4) % 4], pos = b % 4;
+  if (pos === 0) { tone(NOTE(ch[0]), t, beat * 1.8, .22, 'sine'); tone(NOTE(ch[0] + 12), t, beat * 1.2, .08); }
+  else { for (const n of ch.slice(1)) tone(NOTE(n), t, beat * .7, .045); }
+  const m = MELODY[b % 16];
+  if (pos === 0 || pos === 2) { tone(NOTE(m), t, beat * 1.4, .1); tone(NOTE(m + 12), t, beat * .9, .025, 'sine'); }
+}
+
+function lessonBg() {
+  let o = `<rect x="-400" y="0" width="2400" height="700" fill="#fdf0d8"/>`;
+  for (let i = -2; i < 9; i++) o += `<rect x="${120 + i * 200}" y="30" width="186" height="440" fill="url(#lsMirror)" stroke="#e6cf9e" stroke-width="5"/>`;
+  o += `<path d="M-400 390 H2000" stroke="#a87449" stroke-width="12" stroke-linecap="round"/>`;
+  for (const x of [-100, 300, 700, 1100, 1500]) o += `<path d="M${x} 390 V640" stroke="#a87449" stroke-width="7"/>`;
+  o += `<rect x="-400" y="620" width="2400" height="80" fill="#d9a06a"/>`;
+  for (let x = -400; x < 2000; x += 60) o += `<path d="M${x} 620 l30 80" stroke="#c98f5b" stroke-width="3"/>`;
+  return `<defs><linearGradient id="lsMirror" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6f3fb"/><stop offset=".45" stop-color="#c9e2f2"/><stop offset=".5" stop-color="#f4fbff"/><stop offset="1" stop-color="#bcd8ec"/></linearGradient></defs>` + o;
+}
+const LS_FLOOR = 640;
+function lsActorSVG(look, key, scale) {
+  return `<g transform="scale(${scale})">${figureSVG(look, poseOpts(key))}</g>`;
+}
+function setActorPose(a, key) {
+  if (a.pose === key) return;
+  a.pose = key; a.el.innerHTML = lsActorSVG(a.look, key, a.scale);
+}
+
+function openLesson() {
+  $('lesson').hidden = false;
+  $('lessonStage').innerHTML = lessonBg() + `<g id="lsActors"></g>`;
+  const actorsEl = $('lessonStage').querySelector('#lsActors');
+  const mates = ['elisabeth', 'levi', 'johanna'].filter(id => id !== null);
+  const list = [
+    { id: 'colletin', look: CHARS.colletin.look, x: 330, scale: 1.12 * (CHARS.colletin.look.height || 1) },
+    { id: mates[0], look: CHARS[mates[0]].look, x: 1130, scale: .82 },
+    { id: mates[1], look: CHARS[mates[1]].look, x: 1310, scale: .82 * (CHARS[mates[1]].look.height || 1) },
+    { id: 'me', look: playerLook(), x: 790, scale: 1.08 },
+  ];
+  const actors = {};
+  for (const a of list) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(${a.x},${LS_FLOOR})`);
+    const inner = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.appendChild(inner); actorsEl.appendChild(g);
+    actors[a.id === 'me' || a.id === 'colletin' ? a.id : 'mate' + Object.keys(actors).length] = { ...a, el: inner, pose: undefined };
+  }
+  Object.values(actors).forEach(a => setActorPose(a, null));
+  L = { actors, running: false };
+  $('lsButtons').innerHTML = ''; $('lsBubble').hidden = true;
+  $('lsInfo').textContent = 'Ballettunterricht'; $('lsScore').textContent = '✨ 0';
+  clearCards();
+  levelPanel();
+}
+function lsPanel(html) { $('lsPanel').innerHTML = html; $('lsPanelBg').hidden = false; }
+function lsPanelClose() { $('lsPanelBg').hidden = true; }
+function levelPanel() {
+  const best = S.lessons || {};
+  let h = `<h2>Ballettunterricht</h2><p>Madame Colletin: „Wähle, wie schwer deine Stunde sein soll."</p>`;
+  for (const [k, lv] of Object.entries(LEVELS)) {
+    const st = best[k] || 0;
+    h += `<button class="btn lvl" data-lvl="${k}"><span class="stars-earned">${'★'.repeat(st)}${'☆'.repeat(3 - st)}</span><span>${lv.name}</span><small>${lv.info}</small></button>`;
+  }
+  h += `<div class="row"><button class="btn" id="lsBack">Zurück in den Saal</button></div>`;
+  lsPanel(h);
+  $('lsBack').onclick = closeLesson;
+  document.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => learnPanel(b.dataset.lvl));
+}
+function learnPanel(lvl) {
+  const lv = LEVELS[lvl], look = playerLook();
+  let h = `<h2>Diese Positionen übst du</h2><p>Tippe auf eine Position, dann sagt Madame Colletin sie dir vor.</p><div class="learn">`;
+  for (const k of lv.poses) h += `<button data-say="${k}">${miniFig(look, k)}<b>${POSES[k].name}</b><small>${POSES[k].de}</small></button>`;
+  h += `</div><p style="font-size:16px">Wenn eine Karte oben im Kreis <b>„Jetzt!"</b> ist, tippst du unten auf die gleiche Position. Hör auf die Musik!</p>
+    <div class="row"><button class="btn" id="lsBack">Zurück</button><button class="btn primary big" id="lsGo">Los geht's!</button></div>`;
+  lsPanel(h);
+  document.querySelectorAll('[data-say]').forEach(b => b.onclick = () => { const k = b.dataset.say; setActorPose(L.actors.colletin, k); speak(`${POSES[k].name}. ${POSES[k].de}.`, 'colletin'); });
+  $('lsBack').onclick = levelPanel;
+  $('lsGo').onclick = () => { audio(); lsPanelClose(); startLesson(lvl); };
+}
+function clearCards() { document.querySelectorAll('.ls-card').forEach(c => c.remove()); }
+function startLesson(lvl) {
+  const lv = LEVELS[lvl], look = playerLook();
+  const beat = 60 / lv.bpm;
+  const now = AC ? AC.currentTime : performance.now() / 1000;
+  const t0 = now + 0.4;
+  // Abfolge der Positionen: zufällig, höchstens zweimal dieselbe hintereinander
+  const seq = [];
+  for (let i = 0; i < lv.cards; i++) {
+    let k; do { k = lv.poses[Math.floor(Math.random() * lv.poses.length)]; } while (seq.length >= 2 && seq[i - 1] === k && seq[i - 2] === k);
+    seq.push(k);
+  }
+  clearCards();
+  const lane = $('lane');
+  const cards = seq.map((k, i) => {
+    const el = document.createElement('div'); el.className = 'ls-card';
+    el.innerHTML = `${miniFig(look, k)}<b>${POSES[k].name}</b>`;
+    lane.appendChild(el);
+    return { k, t: t0 + (4 + i * lv.gap) * beat, el, done: false };
+  });
+  // Knöpfe
+  const box = $('lsButtons'); box.innerHTML = '';
+  for (const k of lv.poses) {
+    const b = document.createElement('button'); b.className = 'pose-btn'; b.dataset.pose = k;
+    b.innerHTML = `${miniFig(look, k)}<b>${POSES[k].name}</b><small>${POSES[k].de}</small>`;
+    b.addEventListener('pointerdown', e => { e.preventDefault(); lsInput(k, b); });
+    box.appendChild(b);
+  }
+  Object.assign(L, { lvl, lv, beat, t0, cards, nextBeat: -4, endT: cards[cards.length - 1].t + beat * 3, running: true,
+    points: 0, perfect: 0, good: 0, miss: 0, streak: 0, myPoseUntil: 0, matePoseUntil: 0 });
+  $('lsInfo').textContent = `${lv.name} · los geht's!`;
+  bubble('Und … un, deux, trois, quatre!');
+  requestAnimationFrame(lessonTick);
+}
+function clock() { return AC ? AC.currentTime : performance.now() / 1000; }
+function lessonTick() {
+  if (!L || !L.running) return;
+  const now = clock(), { beat, t0, lv } = L;
+  // Musik vorausplanen
+  while (t0 + (L.nextBeat + 4) * beat < now + 0.25) {
+    const b = L.nextBeat, t = t0 + (b + 4) * beat;
+    if (t > L.endT + beat) break;
+    playBeat(b < 0 ? (b === -4 ? -1 : -2) : b, Math.max(t, now), beat);
+    L.nextBeat++;
+  }
+  // Takt-Puls am Zielkreis
+  const ph = ((now - t0) / beat) % 1;
+  $('lsTarget').classList.toggle('beat', now > t0 && ph < 0.15);
+  // Karten bewegen
+  const lane = $('lane'), W = lane.clientWidth, tx = Math.max(70, W * 0.16);
+  $('lsTarget').style.left = tx + 'px';
+  const speed = (W - tx + 60) / (beat * 4);
+  let upcoming = null;
+  for (const c of L.cards) {
+    const x = tx + (c.t - now) * speed;
+    c.el.style.transform = `translateX(${x}px)`;
+    if (!c.done && now > c.t + lv.win) { c.done = true; c.el.classList.add('miss'); judge('miss'); }
+    if (!c.done && !upcoming) upcoming = c;
+  }
+  // Madame zeigt die nächste Position vor, die Mitschüler tanzen im Takt mit
+  if (upcoming && upcoming.t - now < beat * 1.2) setActorPose(L.actors.colletin, upcoming.k);
+  for (const c of L.cards) if (Math.abs(now - c.t) < beat * 0.6) { setActorPose(L.actors.mate1, c.k); setActorPose(L.actors.mate2, c.k); L.matePoseUntil = c.t + beat * 0.6; }
+  if (now > L.matePoseUntil) { setActorPose(L.actors.mate1, null); setActorPose(L.actors.mate2, null); }
+  if (now > L.myPoseUntil) setActorPose(L.actors.me, null);
+  const done = L.cards.filter(c => c.done).length;
+  $('lsInfo').textContent = `${lv.name} · ${done}/${L.cards.length}`;
+  if (now > L.endT) return finishLesson();
+  requestAnimationFrame(lessonTick);
+}
+function lsInput(k, btn) {
+  if (!L || !L.running) return;
+  const now = clock();
+  setActorPose(L.actors.me, k); L.myPoseUntil = now + L.beat * 0.8;
+  btn.classList.add('pressed'); setTimeout(() => btn.classList.remove('pressed'), 120);
+  // nächste offene Karte im Zeitfenster
+  const c = L.cards.find(c => !c.done && Math.abs(c.t - now) <= L.lv.win);
+  if (!c) return;   // zu früh: nichts passiert
+  c.done = true;
+  if (c.k !== k) { c.el.classList.add('miss'); return judge('falsch'); }
+  const dt = Math.abs(c.t - now);
+  c.el.classList.add('hit');
+  judge(dt < L.lv.win * 0.45 ? 'perfekt' : 'gut');
+}
+const PRAISE = ['Très bien!', 'Magnifique!', 'Bravo!', 'Schön gestreckt!', 'Wunderbar!'];
+const TIPS = { miss: ['Achte auf den Takt!', 'Konzentration!', 'Weiter, nicht aufgeben!'], falsch: ['Schau genau hin!', 'Das war die falsche Position.'] };
+function judge(r) {
+  const fb = $('lsFeedback');
+  const t = { perfekt: ['Perfekt! ✨', '#c2456e'], gut: ['Gut!', '#3f9a6a'], miss: ['Verpasst', '#8a7a82'], falsch: ['Falsch', '#b8475c'] }[r];
+  fb.textContent = t[0]; fb.style.color = t[1];
+  fb.classList.remove('on'); void fb.offsetWidth; fb.classList.add('on');
+  clearTimeout(judge.tm); judge.tm = setTimeout(() => fb.classList.remove('on'), 450);
+  if (r === 'perfekt') { L.points += 2; L.perfect++; L.streak++; }
+  else if (r === 'gut') { L.points += 1; L.good++; L.streak++; }
+  else { L.miss++; L.streak = 0; if (Math.random() < .5) bubble(TIPS[r][Math.floor(Math.random() * TIPS[r].length)]); }
+  if (L.streak && L.streak % 4 === 0) bubble(PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+  $('lsScore').textContent = `✨ ${L.points}`;
+}
+function bubble(text) {
+  const b = $('lsBubble'); b.textContent = 'Madame Colletin: ' + text; b.hidden = false;
+  clearTimeout(bubble.tm); bubble.tm = setTimeout(() => { b.hidden = true; }, 1800);
+}
+function finishLesson() {
+  L.running = false;
+  const max = L.cards.length * 2, pct = L.points / max;
+  const stars = pct >= .85 ? 3 : pct >= .6 ? 2 : pct >= .3 ? 1 : 0;
+  S.lessons = S.lessons || {};
+  const before = S.lessons[L.lvl] || 0;
+  if (stars > before) S.lessons[L.lvl] = stars;
+  S.lessonsDone = (S.lessonsDone || 0) + 1;
+  if (stars) { S.stars += stars; $('stars').textContent = S.stars; }
+  save();
+  setActorPose(L.actors.colletin, stars >= 2 ? 'seconde' : null);
+  const words = stars === 3 ? `Excellent! So tanzt ${W() ? 'eine echte Étoile' : 'ein echter Étoile'}!` : stars === 2 ? 'Sehr ordentlich. Weiter so!' : stars === 1 ? 'Ein Anfang. Übung macht den Meister!' : 'Das üben wir noch einmal. Nicht traurig sein!';
+  speak(words, 'colletin');
+  lsPanel(`<h2>Stunde beendet!</h2><div class="result-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+    <p>Madame Colletin: „${words}"</p>
+    <p style="font-size:16px">Perfekt: ${L.perfect} · Gut: ${L.good} · Verpasst: ${L.miss}</p>
+    ${stars ? `<p style="color:var(--rose)">★ +${stars} Lob-Punkt${stars > 1 ? 'e' : ''}!</p>` : ''}
+    ${stars > before && before ? `<p>Neuer Rekord für „${L.lv.name}"!</p>` : ''}
+    <div class="row"><button class="btn" id="lsAgain">Nochmal</button><button class="btn" id="lsOther">Andere Stufe</button><button class="btn primary" id="lsDone">Fertig</button></div>`);
+  $('lsAgain').onclick = () => { lsPanelClose(); audio(); startLesson(L.lvl); };
+  $('lsOther').onclick = () => { $('lsButtons').innerHTML = ''; clearCards(); levelPanel(); };
+  $('lsDone').onclick = closeLesson;
+}
+function closeLesson() {
+  if (L) L.running = false;
+  stopSpeak(); lsPanelClose(); clearCards();
+  $('lesson').hidden = true; L = null;
+  enterScene(S.scene, player.x);
+}
+$('lsQuit').onclick = () => {
+  if (!L) return;
+  if (!L.running) return closeLesson();
+  L.running = false;
+  lsPanel(`<h2>Stunde abbrechen?</h2><p>Dann gibt es für diese Stunde keine Lob-Punkte.</p><div class="row"><button class="btn" id="lsGoOn">Von vorn tanzen</button><button class="btn primary" id="lsStop">Abbrechen</button></div>`);
+  const pausedAt = clock();
+  $('lsGoOn').onclick = () => { lsPanelClose(); startLesson(L.lvl); };
+  $('lsStop').onclick = closeLesson;
+};
 
 // =====================================================================  Menü
 $('menuBtn').onclick = () => {
@@ -1154,7 +1476,7 @@ addEventListener('beforeunload', () => { if (S) { S.x = player.x; save(); } });
 setInterval(() => { if (S && cur) { S.x = player.x; save(); } }, 4000);
 let lastPhase = null;
 setInterval(() => { if (!S || !cur) return; const ph = phase(); if (lastPhase && ph !== lastPhase && $('dialog').hidden && $('modal').hidden && !player.moving) enterScene(S.scene, player.x); lastPhase = ph; }, 30000);
-window.__etoile = { go: (id, x) => enterScene(id, x), state: () => S };
+window.__etoile = { go: (id, x) => enterScene(id, x), state: () => S, lesson: () => openLesson(), L: () => L, clock: () => clock() };
 requestAnimationFrame(tick);
 window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? null);
 })();

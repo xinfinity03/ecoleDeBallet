@@ -75,6 +75,14 @@ Stand: 21.11.2026. Diese Datei sammelt alle Entscheidungen. Sie wird laufend erg
 - **Punkte:** Lob-Punkte von Madame Colletin, weitere Punktearten folgen.
 - **Später:** Macarons im Café selbst gestalten, Mehrspieler.
 
+## Ballettunterricht (Rhythmus-Spiel)
+- Im Ballettsaal Madame Colletin ansprechen → „Ich möchte üben!"
+- Oben laufen Karten mit Positionen zum Kreis „Jetzt!". Ist eine Karte im Kreis, tippt man im Takt der Klaviermusik unten auf die passende Position. Madame Colletin zeigt die nächste Position vor, Elisabeth und Levi tanzen mit.
+- Positionen: Bras bas (Arme rund nach unten), Seconde (Arme zur Seite), En haut (Arme rund nach oben), Plié (Knie beugen), Relevé (auf die Zehenspitzen), Arabesque (ein Bein nach hinten).
+- Stufen: **Leicht** (2 Positionen, 12 Karten, langsam), **Mittel** (4 Positionen, 16 Karten), **Schwer** (alle 6, 20 Karten, schneller).
+- Bewertung: Perfekt = 2, Gut = 1 Punkt. Am Ende 0–3 Sterne (ab 30 / 60 / 85 %). **Jeder Stern = 1 Lob-Punkt.** Die beste Sternzahl je Stufe wird gespeichert.
+- Offen: Soll es Lob-Punkte bei jeder Wiederholung geben oder z. B. nur einmal am Tag / nur für neue Rekorde?
+
 ## Für später gemerkt
 - **Bilder in den Rahmen malen wir selbst.** Die Ballettbilder über den Betten (und später weitere Bilder im Haus) sind im Moment nur Platzhalter. Sie werden durch eigene Zeichnungen ersetzt, die wie Sofa und Kleid freigestellt werden (`tools/zeichnung_freistellen.py`). Am besten im Querformat zeichnen, ungefähr im Seitenverhältnis 4:3.
 

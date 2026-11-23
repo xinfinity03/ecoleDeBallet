@@ -49,6 +49,24 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
 .btn.primary { background: var(--rose); color: #fff; border-color: #7e2547; }
 .btn.big { font-size: 22px; padding: 16px 30px; text-align: center; }
 
+#decoBtn { position: fixed; z-index: 11; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); font-size: 21px; padding: 14px 24px; }
+#tray { position: fixed; z-index: 12; left: 0; right: 0; bottom: 0; background: var(--cream); border-top: 4px solid var(--plum);
+  padding: 10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); box-shadow: 0 -4px 0 rgba(43,34,54,.15); }
+.tray-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.tray-head b { font: 700 21px var(--title-font); color: var(--rose); }
+.tray-head span { font-size: 14px; font-weight: 700; opacity: .75; flex: 1; min-width: 200px; }
+.tray-head .btn { padding: 8px 22px; }
+.tray-items { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.deco-card { flex: 0 0 auto; width: 118px; border: 3px solid var(--plum); border-radius: 18px; background: #fff; padding: 6px 6px 8px; display: grid; justify-items: center; gap: 2px;
+  cursor: pointer; color: var(--plum); font-family: var(--ui-font); }
+.deco-card svg { width: 96px; height: 76px; }
+.deco-card b { font-size: 13.5px; line-height: 1.15; text-align: center; }
+.deco-card small { font-size: 12.5px; font-weight: 800; }
+.deco-card.placed { background: var(--rose-soft); }
+.deco-card.locked { opacity: .8; }
+.deco-card small.price { color: #b07a00; }
+body.editing .hud-bot-l { display: none; }
+body.editing #game { bottom: var(--tray-h, 210px); }
 #movein { position: fixed; z-index: 11; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); font-size: 21px; padding: 14px 24px; }
 
 /* Dialog */
@@ -157,7 +175,7 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
 <div id="game">
   <svg id="stage" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
     <defs id="defs"></defs>
-    <g id="cam"><g id="scene"></g><g id="actors"></g></g>
+    <g id="cam"><g id="scene"></g><g id="decor"></g><g id="actors"></g></g>
   </svg>
 </div>
 
@@ -169,6 +187,11 @@ button:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
 </div>
 <div class="hud hud-bot-l"><div class="task" id="task"></div></div>
 <button class="btn primary" id="movein" hidden>Hier einziehen ♥</button>
+<button class="btn primary" id="decoBtn" hidden>✏️ Einrichten</button>
+<div id="tray" hidden>
+  <div class="tray-head"><b>Zimmer einrichten</b><span>Antippen zum Hinstellen · mit dem Finger verschieben · × zum Wegräumen</span><button class="btn primary" id="trayDone">Fertig</button></div>
+  <div class="tray-items" id="trayItems"></div>
+</div>
 
 <div id="dialog" hidden>
   <div class="face" id="dlgFace"></div>
@@ -207,6 +230,7 @@ const HAIR = { braun: '#7a4a2b', blond: '#f0cc6e', hellblond: '#f6dc8f', schwarz
 const EYES = { braun: '#4a3528', blau: '#3f6fb0', gruen: '#3f8a5a', grau: '#6b7280' };
 const SOFA_IMG = 'data:image/webp;base64,{{SOFA}}';
 const KLEID_IMG = 'data:image/webp;base64,{{KLEID}}';
+const BILD1_IMG = 'data:image/webp;base64,{{BILD_BALLERINA}}';
 
 // =====================================================================  Figuren-Baukasten
 function outlined(d, color, w) {
@@ -609,7 +633,7 @@ function roomScene(n) {
   const w = 1420, rid = residentOf(n), mine = S.room === n;
   let bg = wallBase(w, ROOM_COLORS[n], '#dcb68c', '#cba277');
   bg += frenchWindow(605, 230, n <= 5 ? '#f7b6c8' : '#9fc3e6', `win${n}`);
-  bg += picture(280, 505, BED_COLORS[n]) + picture(990, 505, mine ? S.player.color : '#e8dfd2');
+  bg += picture(280, 505, BED_COLORS[n]) + (mine ? '' : picture(990, 505, '#e8dfd2'));
   bg += `<ellipse cx="720" cy="${FLOOR_Y + 50}" rx="260" ry="32" fill="${BED_COLORS[n]}" opacity=".55" stroke="${LINE}" stroke-width="2"/>`;
   // Betten: links = Bewohner(in), rechts = zweites Bett
   bg += bedSVG(220, BED_COLORS[n], false, 230);
@@ -808,7 +832,8 @@ const player = { x: 500, tx: 500, moving: false, walkT: 0, onArrive: null, el: n
 const npcEls = [];
 
 function resize() {
-  const a = innerWidth / innerHeight;
+  const gb = $('game').getBoundingClientRect();
+  const a = (gb.width || innerWidth) / (gb.height || innerHeight);
   VW = Math.max(1100, Math.min(2200, VH * a));
   svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
   updateCamera();
@@ -852,6 +877,8 @@ function enterScene(id, x) {
   updateCamera();
   $('place').textContent = cur.place;
   $('movein').hidden = !(cur.room && S.room == null && canLiveIn(cur.room));
+  if (editing && !myRoomHere()) { editing = false; document.body.classList.remove('editing'); $('tray').hidden = true; resize(); }
+  renderDecor(); updateDecoBtn();
   updateTask();
   save();
 }
@@ -892,6 +919,7 @@ function toWorld(ev) {
 }
 svg.addEventListener('pointerdown', ev => {
   if (!cur || !$('dialog').hidden || !$('modal').hidden) return;
+  if (editing) return decorPointerDown(ev);
   const w = toWorld(ev);
   const hit = ev.target.closest('[data-act]');
   if (hit) return act(hit.getAttribute('data-act'), w.x);
@@ -952,7 +980,7 @@ $('movein').addEventListener('click', () => {
     <div class="row"><button class="btn" id="mNo">Noch nicht</button><button class="btn primary" id="mYes">Ja, hier wohne ich!</button></div>`);
   $('mNo').onclick = closeModal;
   $('mYes').onclick = () => {
-    closeModal(); S.room = n; save();
+    closeModal(); S.room = n; S.owned = S.owned || [...START_OWNED]; save();
     enterScene(`room${n}`, player.x);
     sparkle();
     if (rid) startTalk(rid, 'movein'); else toast('Zimmer ' + n + ' ist jetzt dein Zimmer ♥');
@@ -1053,6 +1081,7 @@ function startTalk(id, mode) {
   $('dialog').hidden = false;
   $('movein').hidden = true;
   if (mode === 'movein') return showLine(id, { say: MOVEIN[id], ch: [['Ich freu mich!', 'end']] });
+  if (mode && mode.startsWith('say:')) return showLine(id, { say: mode.slice(4), ch: [['Danke!', 'end']] });
   const first = id === 'colletin' ? !S.greetedTeacher : !S.met.includes(id);
   if (first) { dlg = { id, tree: dialogs(id) }; showNode('start'); }
   else if (id === 'colletin') { const a = AGAIN.colletin; showLine(id, { say: a[Math.floor(Math.random() * a.length)] + ' Bereit für den Unterricht?', ch: [['Ja, ich möchte üben!', 'lesson'], ['Später, Madame.', 'end']] }); }
@@ -1112,6 +1141,7 @@ function addStars(n) { S.stars += n; $('stars').textContent = S.stars; toast(`�
 function updateTask() {
   let t;
   if (S.room == null) t = `<b>Aufgabe:</b> Such dir ein Zimmer aus! Die Zimmer ${W() ? 'der Mädchen sind im 2. Stock' : 'der Jungen sind im 3. Stock'}. Nimm die Treppe.`;
+  else if (!(S.decor || []).length && S.scene === 'room' + S.room) t = `<b>Tipp:</b> Tippe auf „Einrichten“ und mach dein Zimmer gemütlich, zum Beispiel mit eurem Bild und dem roten Sofa!`;
   else if (!S.greetedTeacher) t = `<b>Aufgabe:</b> Geh in den Ballettsaal im 1. Stock und begrüße Madame Colletin.`;
   else if (!S.lessonsDone) t = `<b>Aufgabe:</b> Nimm an deiner ersten Ballettstunde teil. Sprich Madame Colletin im Ballettsaal an.`;
   else if (S.met.length < 8) t = `<b>Aufgabe:</b> Lerne alle Tänzerinnen und Tänzer kennen (${S.met.length}/8). Klopf an ihre Türen!`;
@@ -1128,6 +1158,140 @@ function sparkle() {
   setTimeout(() => g.remove(), 1400);
 }
 
+
+
+// =====================================================================  Zimmer einrichten
+const goldFrame = (w, h, inner) => `<rect x="${-w / 2 - 12}" y="${-h / 2 - 12}" width="${w + 24}" height="${h + 24}" rx="4" fill="#d9b36c" stroke="${LINE}" stroke-width="2"/><rect x="${-w / 2 - 4}" y="${-h / 2 - 4}" width="${w + 8}" height="${h + 8}" fill="#b8945c"/>${inner}`;
+const DECOR = {
+  bild_ballerina: { name: 'Ballerina im Licht', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${BILD1_IMG}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  sofa: { name: 'Rotes Sofa', note: 'Unsere Zeichnung', kind: 'boden', price: 0, w: 300, h: 192,
+    draw: () => `<image href="${SOFA_IMG}" x="-150" y="-192" width="300" height="192"/>` },
+  pflanze: { name: 'Zimmerpflanze', kind: 'boden', price: 0, w: 90, h: 150,
+    draw: () => `<path d="M-30 0 l7 -56 h46 l7 56 z" fill="#d98b5f" stroke="${LINE}" stroke-width="2"/><path d="M0 -56 q-50 -40 -24 -100 q12 44 24 100 q8 -70 40 -90 q10 56 -40 90" fill="#7fb77e" stroke="${LINE}" stroke-width="2"/>` },
+  poster: { name: 'Poster Schwanensee', kind: 'wand', price: 1, w: 110, h: 150,
+    draw: () => `<rect x="-55" y="-75" width="110" height="150" rx="3" fill="#2f4c7a" stroke="${LINE}" stroke-width="2"/><path d="M-30 20 q20 -40 50 -30 q-10 10 -4 30 q-20 -6 -46 0 z" fill="#fff"/><path d="M14 -10 q4 -26 -8 -34" stroke="#fff" stroke-width="5" fill="none"/><text x="0" y="56" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Schwanensee</text>${star(36, -52, 8)}` },
+  teddy: { name: 'Teddybär', kind: 'boden', price: 2, w: 80, h: 90,
+    draw: () => `<g fill="#b07a4f" stroke="${LINE}" stroke-width="2"><circle cx="-24" cy="-74" r="11"/><circle cx="24" cy="-74" r="11"/><ellipse cx="0" cy="-26" rx="32" ry="28"/><circle cx="0" cy="-62" r="26"/><ellipse cx="-26" cy="-6" rx="13" ry="9"/><ellipse cx="26" cy="-6" rx="13" ry="9"/></g><ellipse cx="0" cy="-55" rx="10" ry="7" fill="#e9c9a8"/><circle cx="-9" cy="-66" r="3" fill="${LINE}"/><circle cx="9" cy="-66" r="3" fill="${LINE}"/><circle cx="0" cy="-57" r="3" fill="${LINE}"/><path d="M-12 -38 l12 6 l12 -6 v10 l-12 -6 l-12 6 z" fill="#f28ab0" stroke="${LINE}" stroke-width="1.5"/>` },
+  stehlampe: { name: 'Stehlampe', kind: 'boden', price: 2, w: 80, h: 250,
+    draw: () => `${['abend', 'nacht'].includes(phase()) ? '<circle cx="0" cy="-215" r="80" fill="#fff3c4" opacity=".35"/>' : ''}<ellipse cx="0" cy="-4" rx="30" ry="7" fill="#c9a36a" stroke="${LINE}" stroke-width="2"/><path d="M0 -4 V-200" stroke="#c9a36a" stroke-width="7"/><path d="M-36 -190 h72 l-14 -52 h-44 z" fill="#ffe7a0" stroke="${LINE}" stroke-width="2"/>` },
+  teppich: { name: 'Runder Teppich', kind: 'boden', price: 2, w: 320, h: 40, flat: true,
+    draw: () => `<ellipse cx="0" cy="38" rx="160" ry="28" fill="#f7b6c8" stroke="${LINE}" stroke-width="2"/><ellipse cx="0" cy="38" rx="118" ry="19" fill="none" stroke="#fff" stroke-width="4" opacity=".7"/>` },
+  pouf: { name: 'Sitzkissen', kind: 'boden', price: 2, w: 100, h: 60,
+    draw: () => `<path d="M-48 0 q-6 -46 48 -52 q54 6 48 52 z" fill="#c7a2f0" stroke="${LINE}" stroke-width="2"/><path d="M-30 -36 q30 12 60 0" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/>` },
+  regal: { name: 'Bücherregal', kind: 'wand', price: 3, w: 190, h: 80,
+    draw: () => `<rect x="-95" y="26" width="190" height="12" rx="3" fill="#b98a63" stroke="${LINE}" stroke-width="2"/>` +
+      ['#e77', '#7ae', '#ec6', '#8c8', '#c7a2f0', '#f59ab8'].map((c, i) => `<rect x="${-86 + i * 20}" y="${-28 + (i % 2) * 8}" width="16" height="${54 - (i % 2) * 8}" fill="${c}" stroke="${LINE}" stroke-width="1.5"/>`).join('') +
+      `<path d="M60 26 l4 -22 h22 l4 22 z" fill="#d98b5f" stroke="${LINE}" stroke-width="1.5"/><circle cx="75" cy="-6" r="14" fill="#7fb77e"/>` },
+  spiegel: { name: 'Goldspiegel', kind: 'wand', price: 3, w: 110, h: 170,
+    draw: () => `<ellipse cx="0" cy="0" rx="55" ry="85" fill="url(#mirrorG)" stroke="#d9b36c" stroke-width="9"/><path d="M-20 -50 q-10 30 0 60" stroke="#fff" stroke-width="6" fill="none" opacity=".7"/>` },
+  tutu: { name: 'Tutu am Haken', kind: 'wand', price: 4, w: 150, h: 140,
+    draw: () => `<circle cx="0" cy="-66" r="6" fill="#d9b36c" stroke="${LINE}" stroke-width="1.5"/><image href="${KLEID_IMG}" x="-75" y="-62" width="150" height="132"/>` },
+  lichterkette: { name: 'Lichterkette', kind: 'wand', price: 4, w: 320, h: 70,
+    draw: () => `<path d="M-160 -20 Q-80 30 0 0 T160 -20" fill="none" stroke="${LINE}" stroke-width="2"/>` +
+      Array.from({ length: 9 }, (_, i) => { const t = i / 8, x = -160 + t * 320, y = -20 + Math.sin(t * Math.PI * 2) * -18 + 12, c = ['#ffd77a', '#f7a8c4', '#bfe3f5'][i % 3];
+        return `<circle cx="${x}" cy="${y}" r="14" fill="${c}" opacity=".3"/><circle cx="${x}" cy="${y}" r="7" fill="${c}" stroke="${LINE}" stroke-width="1.2"/>`; }).join('') },
+};
+const START_OWNED = Object.keys(DECOR).filter(k => DECOR[k].price === 0);
+let editing = false, drag = null;
+const WALL_Y = [180, 560];
+const myRoomHere = () => cur && cur.room && S.room === cur.room;
+function decorItemSVG(d, i, edit) {
+  const it = DECOR[d.id]; if (!it) return '';
+  let o = `<g transform="translate(${d.x},${d.y})" data-decor="${i}" style="cursor:${edit ? 'grab' : 'default'}">${it.draw()}`;
+  if (edit) {
+    const top = it.kind === 'wand' ? -it.h / 2 - 16 : -it.h - 10, bx = it.w / 2 + 6;
+    o += `<rect x="${-it.w / 2 - 14}" y="${top}" width="${it.w + 28}" height="${(it.kind === 'wand' ? it.h + 32 : it.h + 20) + (it.flat ? 60 : 0)}" rx="10" fill="#fff" fill-opacity=".001" stroke="#c2456e" stroke-width="3" stroke-dasharray="9 6"/>`;
+    o += `<g data-remove="${i}" style="cursor:pointer"><circle cx="${bx}" cy="${top}" r="20" fill="#c2456e" stroke="#fff" stroke-width="3"/><text x="${bx}" y="${top + 8}" text-anchor="middle" font-size="24" font-weight="800" fill="#fff">×</text></g>`;
+  }
+  return o + '</g>';
+}
+function renderDecor() {
+  const g = $('decor');
+  if (!myRoomHere()) { g.innerHTML = ''; return; }
+  const list = S.decor || [];
+  // Teppiche zuerst (liegen am Boden), dann Wand, dann Möbel
+  const order = list.map((d, i) => [d, i]).sort((a, b) => (DECOR[a[0].id]?.flat ? 0 : DECOR[a[0].id]?.kind === 'wand' ? 1 : 2) - (DECOR[b[0].id]?.flat ? 0 : DECOR[b[0].id]?.kind === 'wand' ? 1 : 2));
+  g.innerHTML = order.map(([d, i]) => decorItemSVG(d, i, editing)).join('');
+  g.style.pointerEvents = editing ? 'auto' : 'none';
+}
+function updateDecoBtn() {
+  $('decoBtn').hidden = editing || !myRoomHere();
+}
+function renderTray() {
+  const owned = S.owned || START_OWNED, placed = new Set((S.decor || []).map(d => d.id));
+  $('trayItems').innerHTML = Object.entries(DECOR).map(([k, it]) => {
+    const has = owned.includes(k);
+    const vb = it.kind === 'wand' ? `${-it.w / 2 - 16} ${-it.h / 2 - 16} ${it.w + 32} ${it.h + 32}` : it.flat ? `-165 0 330 72` : `${-it.w / 2 - 10} ${-it.h - 10} ${it.w + 20} ${it.h + 14}`;
+    const tag = placed.has(k) ? '<small>steht im Zimmer ✓</small>' : has ? `<small>${it.note || 'Hinstellen'}</small>` : `<small class="price">★ ${it.price} Lob-Punkte</small>`;
+    return `<button class="deco-card ${placed.has(k) ? 'placed' : ''} ${has ? '' : 'locked'}" data-item="${k}"><svg viewBox="${vb}">${it.draw()}</svg><b>${it.name}</b>${tag}</button>`;
+  }).join('');
+  document.querySelectorAll('[data-item]').forEach(b => b.onclick = () => trayPick(b.dataset.item));
+}
+function trayPick(k) {
+  const it = DECOR[k]; S.owned = S.owned || [...START_OWNED]; S.decor = S.decor || [];
+  if (S.decor.some(d => d.id === k)) return toast(`${it.name} steht schon im Zimmer. Du kannst es verschieben.`);
+  if (!S.owned.includes(k)) {
+    if (S.stars < it.price) return toast(`Dafür brauchst du ★ ${it.price} Lob-Punkte. Übe im Ballettsaal, um mehr zu sammeln!`);
+    openModal(`<h2>${it.name} kaufen?</h2><p>Das kostet <b>★ ${it.price} Lob-Punkte</b>. Du hast ★ ${S.stars}.</p><div class="row"><button class="btn" id="mNo">Nein</button><button class="btn primary" id="mYes">Ja, kaufen!</button></div>`);
+    $('mNo').onclick = closeModal;
+    $('mYes').onclick = () => { closeModal(); S.stars -= it.price; $('stars').textContent = S.stars; S.owned.push(k); placeItem(k); };
+    return;
+  }
+  placeItem(k);
+}
+function placeItem(k) {
+  const it = DECOR[k], cx = (cur.camX || 0) + VW / 2;
+  const x = Math.max(it.w / 2 + 40, Math.min(cur.w - it.w / 2 - 40, cx + (Math.random() * 160 - 80)));
+  S.decor.push({ id: k, x: Math.round(x), y: it.kind === 'wand' ? 360 : FLOOR_Y });
+  save(); renderDecor(); renderTray(); sparkleAt(x, it.kind === 'wand' ? 360 : FLOOR_Y - 80);
+}
+function sparkleAt(x, y) {
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  let h = ''; for (let i = 0; i < 7; i++) h += star(x - 90 + Math.random() * 180, y - 60 + Math.random() * 120, 7 + Math.random() * 6);
+  g.innerHTML = h; actorsG.appendChild(g);
+  g.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 900 }); setTimeout(() => g.remove(), 900);
+}
+function startEditing() {
+  editing = true; document.body.classList.add('editing');
+  $('tray').hidden = false; updateDecoBtn(); renderTray();
+  document.documentElement.style.setProperty('--tray-h', $('tray').offsetHeight + 'px'); resize(); renderDecor();
+  const r = cur.room, rid = residentOf(r);
+  if (!S.decoHintShown) { S.decoHintShown = true; toast(rid && cur.npcs.length ? `Richte dein Zimmer ein! ${CHARS[rid].name} schaut gespannt zu.` : 'Richte dein Zimmer ein!'); }
+}
+function stopEditing() {
+  editing = false; drag = null; document.body.classList.remove('editing');
+  $('tray').hidden = true; resize(); renderDecor(); updateDecoBtn(); updateTask(); save();
+  const rid = cur.npcs.some(n => n.id === residentOf(cur.room)) ? residentOf(cur.room) : null;
+  const n = (S.decor || []).length;
+  if (rid && n && !S.decoReacted) {
+    S.decoReacted = true;
+    const say = { marie: 'Hm. Gar nicht mal so schlecht. Aber mein Bett bleibt schöner.', tom: 'Nicht schlecht. Fehlt nur noch ein Poster von mir.', nora: 'Oh, das ist so gemütlich geworden!', johanna: 'Wie cool! Jetzt fehlt nur noch Musik!', elisabeth: 'Das sieht wunderschön aus! Du hast echt Geschmack.', leon: 'Wow! Jetzt ist es das schönste Zimmer im ganzen Stock!', levi: 'Super! Hier kann man sich richtig wohlfühlen.', samy: 'Sehr schön! Soll ich dir beim Tragen helfen?' }[rid];
+    if (say) { setTimeout(() => startTalk(rid, 'say:' + say), 300); }
+  }
+}
+$('decoBtn').onclick = startEditing;
+$('trayDone').onclick = stopEditing;
+function decorPointerDown(ev) {
+  const rm = ev.target.closest('[data-remove]');
+  if (rm) { S.decor.splice(+rm.dataset.remove, 1); save(); renderDecor(); renderTray(); return true; }
+  const el = ev.target.closest('[data-decor]');
+  if (!el) return true;
+  const i = +el.dataset.decor, d = S.decor[i], w = toWorld(ev);
+  drag = { i, dx: d.x - w.x, dy: d.y - w.y };
+  try { svg.setPointerCapture(ev.pointerId); } catch (e) {}
+  return true;
+}
+svg.addEventListener('pointermove', ev => {
+  if (!drag || !editing) return;
+  const w = toWorld(ev), d = S.decor[drag.i], it = DECOR[d.id];
+  d.x = Math.round(Math.max(it.w / 2 + 20, Math.min(cur.w - it.w / 2 - 20, w.x + drag.dx)));
+  if (it.kind === 'wand') d.y = Math.round(Math.max(WALL_Y[0], Math.min(WALL_Y[1], w.y + drag.dy)));
+  const el = $('decor').querySelector(`[data-decor="${drag.i}"]`);
+  if (el) el.setAttribute('transform', `translate(${d.x},${d.y})`);
+});
+const endDrag = () => { if (drag) { drag = null; save(); } };
+svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', endDrag);
 
 // =====================================================================  Ballettunterricht
 const POSES = {

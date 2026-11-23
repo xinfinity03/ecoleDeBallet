@@ -231,6 +231,7 @@ const EYES = { braun: '#4a3528', blau: '#3f6fb0', gruen: '#3f8a5a', grau: '#6b72
 const SOFA_IMG = 'data:image/webp;base64,{{SOFA}}';
 const KLEID_IMG = 'data:image/webp;base64,{{KLEID}}';
 const BILD1_IMG = 'data:image/webp;base64,{{BILD_BALLERINA}}';
+const OWN_PICS = { bild_wal: 'data:image/webp;base64,{{BILD_WAL}}', bild_turm: 'data:image/webp;base64,{{BILD_TURM}}', bild_park: 'data:image/webp;base64,{{BILD_PARK}}', bild_stillleben: 'data:image/webp;base64,{{BILD_STILLLEBEN}}', bild_strasse: 'data:image/webp;base64,{{BILD_STRASSE}}' };
 
 // =====================================================================  Figuren-Baukasten
 function outlined(d, color, w) {
@@ -1165,6 +1166,16 @@ const goldFrame = (w, h, inner) => `<rect x="${-w / 2 - 12}" y="${-h / 2 - 12}" 
 const DECOR = {
   bild_ballerina: { name: 'Ballerina im Licht', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
     draw: () => goldFrame(120, 160, `<image href="${BILD1_IMG}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  bild_wal: { name: 'Wal im Sonnenuntergang', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${OWN_PICS.bild_wal}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  bild_turm: { name: 'Der alte Turm', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${OWN_PICS.bild_turm}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  bild_park: { name: 'Spaziergang im Park', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${OWN_PICS.bild_park}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  bild_stillleben: { name: 'Stillleben mit Früchten', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${OWN_PICS.bild_stillleben}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
+  bild_strasse: { name: 'Straße in der Stadt', note: 'Unser Bild', kind: 'wand', price: 0, w: 120, h: 160,
+    draw: () => goldFrame(120, 160, `<image href="${OWN_PICS.bild_strasse}" x="-60" y="-80" width="120" height="160" preserveAspectRatio="xMidYMid slice"/>`) },
   sofa: { name: 'Rotes Sofa', note: 'Unsere Zeichnung', kind: 'boden', price: 0, w: 300, h: 192,
     draw: () => `<image href="${SOFA_IMG}" x="-150" y="-192" width="300" height="192"/>` },
   pflanze: { name: 'Zimmerpflanze', kind: 'boden', price: 0, w: 90, h: 150,

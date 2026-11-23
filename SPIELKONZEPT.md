@@ -86,10 +86,10 @@ Stand: 21.11.2026. Diese Datei sammelt alle Entscheidungen. Sie wird laufend erg
 ## Zimmer einrichten
 - Im eigenen Zimmer gibt es den Knopf **„Einrichten"**. Unten öffnet sich ein Katalog, die Szene wird so lange verkleinert, damit das ganze Zimmer zu sehen ist.
 - Antippen stellt den Gegenstand ins Zimmer. Mit dem Finger verschieben: Wandsachen frei an der Wand, Möbel am Boden entlang. **×** räumt weg.
-- Gratis: **„Ballerina im Licht" (unser eigenes Bild)**, das rote Sofa (unsere Zeichnung), eine Zimmerpflanze.
+- Gratis: **unsere eigenen Bilder** („Ballerina im Licht", „Wal im Sonnenuntergang", „Der alte Turm", „Spaziergang im Park", „Stillleben mit Früchten", „Straße in der Stadt"), das rote Sofa (unsere Zeichnung), eine Zimmerpflanze.
 - Mit Lob-Punkten: Poster Schwanensee (1), Teddybär, Stehlampe (leuchtet abends), runder Teppich, Sitzkissen (je 2), Bücherregal, Goldspiegel (je 3), Tutu am Haken, Lichterkette (je 4).
 - Nach dem ersten Einrichten sagt die Mitbewohnerin bzw. der Mitbewohner etwas dazu (wenn sie/er gerade im Zimmer ist).
-- Neue eigene Bilder und Zeichnungen kommen einfach als weitere Einträge in den Katalog.
+- Neue eigene Bilder: Foto mit `python3 tools/bild_vorbereiten.py foto.jpg bild_name --licht` vorbereiten (ganzes Blatt, Licht ausgeglichen) und im Katalog `DECOR` in `game/spiel.html` eintragen.
 
 ## Für später gemerkt
 - **Bilder in den Rahmen malen wir selbst.** Die Ballettbilder über den Betten (und später weitere Bilder im Haus) sind im Moment nur Platzhalter. Sie werden durch eigene Zeichnungen ersetzt, die wie Sofa und Kleid freigestellt werden (`tools/zeichnung_freistellen.py`). Am besten im Querformat zeichnen, ungefähr im Seitenverhältnis 4:3.
